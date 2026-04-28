@@ -1,0 +1,69 @@
+version: '3.9'
+
+# ─── LOCAL DEV Docker Compose ───────────────────────────────────────────────
+# Usage:
+#   docker compose -f docker-compose.dev.yml up
+#
+# - Backend runs with nodemon (hot reload) on localhost:3001
+# - Frontend runs with Vite dev server (hot reload) on localhost:5173
+# - Postgres on localhost:5433, Redis on localhost:6380
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: ld_postgres_dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ld_platform
+      POSTGRES_USER:     ld_user
+      POSTGRES_PASSWORD: ld_password_dev
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ld_user -d ld_platform']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: ld_redis_dev
+    restart: unless-stopped
+    ports:
+      - '6380:6379'
+    volumes:
+      - redis_dev_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: ld_backend_dev
+    restart: unless-stopped
+    ports:
+      - '3001:3000'
+    env_file: ./backend/.env      # reads all vars from .env file
+    environment:
+      DB_HOST:   postgres          # override to use Docker service name
+      DB_PORT:   5432
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /app/node_modules          # preserve container's node_modules
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:

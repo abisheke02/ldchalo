@@ -1,0 +1,112 @@
+version: '3.9'
+
+# ─── PRODUCTION Docker Compose ──────────────────────────────────────────────
+# Usage:
+#   1. Copy .env.example to .env and fill in all values
+#   2. docker compose up -d --build
+#   3. App runs at http://YOUR_SERVER_IP (port 80)
+#
+# All API calls go through Nginx (port 80 → /api/* → backend:3000)
+# The browser never needs to know about the backend port.
+
+services:
+
+  # ── PostgreSQL ─────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: ld_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${DB_NAME:-ld_platform}
+      POSTGRES_USER:     ${DB_USER:-ld_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data   # data persists across restarts
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-ld_user} -d ${DB_NAME:-ld_platform}']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    # NOT exposed to host — only reachable inside Docker network
+
+  # ── Redis ──────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: ld_redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    # NOT exposed to host
+
+  # ── Backend API ────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ld_backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV:              production
+      PORT:                  3000
+      DB_HOST:               postgres          # Docker service name
+      DB_PORT:               5432
+      DB_NAME:               ${DB_NAME:-ld_platform}
+      DB_USER:               ${DB_USER:-ld_user}
+      DB_PASSWORD:           ${DB_PASSWORD}
+      DB_SSL:                false
+      REDIS_URL:             redis://:${REDIS_PASSWORD:-}@redis:6379
+      JWT_SECRET:            ${JWT_SECRET}
+      ALLOWED_ORIGINS:       ${ALLOWED_ORIGINS}
+      # Supabase (auth OTP)
+      SUPABASE_URL:          ${SUPABASE_URL}
+      SUPABASE_ANON_KEY:     ${SUPABASE_ANON_KEY}
+      # Firebase (mobile auth)
+      FIREBASE_PROJECT_ID:   ${FIREBASE_PROJECT_ID:-}
+      FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL:-}
+      FIREBASE_PRIVATE_KEY:  ${FIREBASE_PRIVATE_KEY:-}
+      # AI & payments
+      ANTHROPIC_API_KEY:     ${ANTHROPIC_API_KEY:-}
+      RAZORPAY_KEY_ID:       ${RAZORPAY_KEY_ID:-}
+      RAZORPAY_KEY_SECRET:   ${RAZORPAY_KEY_SECRET:-}
+      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
+      # Admin portal
+      ADMIN_USERNAME:        ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD:        ${ADMIN_PASSWORD}
+      # URLs
+      WEB_URL:               ${WEB_URL:-http://localhost}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # NOT exposed to host — Nginx proxies to it
+
+  # ── Web Dashboard (Nginx serving React build + API proxy) ─────────────────
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+      args:
+        # These become VITE_ vars at build time (baked into the JS bundle)
+        VITE_SUPABASE_URL:        ${SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY:   ${SUPABASE_ANON_KEY}
+        VITE_FIREBASE_API_KEY:    ${VITE_FIREBASE_API_KEY:-}
+        VITE_FIREBASE_AUTH_DOMAIN: ${VITE_FIREBASE_AUTH_DOMAIN:-}
+        VITE_FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-}
+        VITE_FIREBASE_APP_ID:     ${VITE_FIREBASE_APP_ID:-}
+    container_name: ld_web
+    restart: unless-stopped
+    ports:
+      - '80:80'        # HTTP — change to '443:443' after adding SSL
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:   # survives `docker compose down` — delete with `docker compose down -v`
+  redis_data:
