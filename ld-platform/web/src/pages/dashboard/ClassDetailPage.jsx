@@ -45,7 +45,8 @@ const ClassDetailPage = () => {
   const [showInvite, setShowInvite] = useState(false);
   const [classInfo, setClassInfo] = useState(null);
 
-  useEffect(() => {
+  const loadData = () => {
+    setLoading(true);
     Promise.all([
       schoolAPI.getClassStudents(classId),
       schoolAPI.getClass(classId).catch(() => ({ class: { class_name: 'Class Details', join_code: '......' } })),
@@ -58,7 +59,9 @@ const ClassDetailPage = () => {
       })
       .catch(() => toast.error('Could not load class data'))
       .finally(() => setLoading(false));
-  }, [classId]);
+  };
+
+  useEffect(() => { loadData(); }, [classId]);
 
   const filtered = students.filter((s) =>
     (s.name || '').toLowerCase().includes(search.toLowerCase())
@@ -269,7 +272,8 @@ const ClassDetailPage = () => {
       <AddStudentModal
         isOpen={showInvite}
         onClose={() => setShowInvite(false)}
-        classData={classInfo || { class_name: 'This Class', join_code: 'XXXXXX' }}
+        classData={classInfo || { class_name: 'This Class', join_code: 'XXXXXX', id: classId }}
+        onStudentAdded={loadData}
       />
     </Layout>
   );
