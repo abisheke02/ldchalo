@@ -27,7 +27,7 @@ const runMigrations = async () => {
     `);
 
     // Find all SQL files in migrations directory, sorted numerically
-    const migrationsDir = path.join(__dirname, '../../../migrations');
+    const migrationsDir = path.join(__dirname, '../../migrations');
     if (!fs.existsSync(migrationsDir)) {
       console.log('[migrations] No migrations directory found, skipping.');
       return;

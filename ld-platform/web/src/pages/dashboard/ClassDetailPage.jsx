@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Layout from '../../components/Layout';
 import LDHeatmap from '../../components/LDHeatmap';
+import AddStudentModal from '../../components/AddStudentModal';
 import { schoolAPI, analyticsAPI } from '../../services/api';
 
 const LD_BADGE = {
@@ -41,14 +42,18 @@ const ClassDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('all');
+  const [showInvite, setShowInvite] = useState(false);
+  const [classInfo, setClassInfo] = useState(null);
 
   useEffect(() => {
     Promise.all([
       schoolAPI.getClassStudents(classId),
+      schoolAPI.getClass(classId).catch(() => ({ class: { class_name: 'Class Details', join_code: '......' } })),
       analyticsAPI.classAtRisk(classId).catch(() => ({ atRisk: [] })),
     ])
-      .then(([{ students: data }, { atRisk: risk }]) => {
+      .then(([{ students: data }, { class: info }, { atRisk: risk }]) => {
         setStudents(data || []);
+        setClassInfo(info);
         setAtRisk(risk || []);
       })
       .catch(() => toast.error('Could not load class data'))
@@ -78,9 +83,21 @@ const ClassDetailPage = () => {
   return (
     <Layout>
       <div className="p-8">
-        <button onClick={() => navigate('/dashboard')} className="text-blue-600 text-sm mb-6 hover:underline">
-          ← Back to Dashboard
-        </button>
+        <div className="flex items-center justify-between mb-8 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+          <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-slate-500 font-bold hover:text-blue-600 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+            </svg>
+            Back to Dashboard
+          </button>
+          <button
+            onClick={() => setShowInvite(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-black px-6 py-3 rounded-2xl transition-all shadow-xl shadow-blue-200 active:scale-95 flex items-center gap-2"
+          >
+            <span className="text-xl">+</span>
+            ADD STUDENT TO CLASS
+          </button>
+        </div>
 
         {/* Stats strip */}
         <div className="grid grid-cols-3 gap-4 mb-8">
@@ -248,6 +265,12 @@ const ClassDetailPage = () => {
           </table>
         </div>
       </div>
+      
+      <AddStudentModal
+        isOpen={showInvite}
+        onClose={() => setShowInvite(false)}
+        classData={classInfo || { class_name: 'This Class', join_code: 'XXXXXX' }}
+      />
     </Layout>
   );
 };

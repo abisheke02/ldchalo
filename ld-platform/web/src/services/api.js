@@ -92,6 +92,7 @@ export const schoolAPI = {
   createClass: (data) => api.post('/schools/classes', data),
   getMyClasses: () => api.get('/schools/classes'),
   getClassStudents: (classId) => api.get(`/schools/classes/${classId}/students`),
+  getClass: (classId) => api.get(`/schools/classes/${classId}`),
   getSubscription: () => api.get('/schools/subscription'),
 };
 

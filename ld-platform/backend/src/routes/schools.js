@@ -5,7 +5,7 @@ const {
   createSchool, registerSchool, joinSchoolByCode, getSchoolInfo,
   createTeacherInvite, acceptTeacherInvite,
   linkParentToStudent,
-  createClass, getClassStudents, getTeacherClasses,
+  createClass, getClassStudents, getTeacherClasses, getClass,
 } = require('../services/schoolService');
 const { query } = require('../config/database');
 
@@ -193,6 +193,13 @@ router.get('/classes/:classId/students', requireAuth, requireRole('teacher','adm
   try {
     const students = await getClassStudents(req.params.classId, req.user.userId);
     res.json({ students });
+  } catch (err) { next(err); }
+});
+
+router.get('/classes/:classId', requireAuth, requireRole('teacher','admin'), async (req, res, next) => {
+  try {
+    const classRecord = await getClass(req.params.classId, req.user.userId);
+    res.json({ class: classRecord });
   } catch (err) { next(err); }
 });
 

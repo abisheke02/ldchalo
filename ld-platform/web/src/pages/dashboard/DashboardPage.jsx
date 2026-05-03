@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Layout from '../../components/Layout';
+import AddStudentModal from '../../components/AddStudentModal';
 import { schoolAPI, paymentsAPI } from '../../services/api';
 import useAuthStore from '../../services/authStore';
 import { trackUpgradeModalViewed, trackUpgradeInitiated, trackClassCreated, trackUpgradeCompleted } from '../../services/analytics';
@@ -187,6 +188,7 @@ const DashboardPage = () => {
   const [creating, setCreating] = useState(false);
   const [subscription, setSubscription] = useState(null);
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const [inviteClass, setInviteClass] = useState(null);
 
   const loadClasses = async () => {
     try {
@@ -300,17 +302,33 @@ const DashboardPage = () => {
                   <span className="text-[var(--text-muted)] group-hover:text-blue-500 transition text-lg">→</span>
                 </div>
 
-                {/* Join code badge */}
                 <div className="flex items-center justify-between border-t border-[var(--border-main)] pt-3 mt-2">
                   <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-bold">Code</span>
-                  <span className="font-mono font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded text-xs tracking-widest">
-                    {cls.join_code}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded text-xs tracking-widest">
+                      {cls.join_code}
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setInviteClass(cls);
+                      }}
+                      className="px-4 py-2 bg-blue-600 text-white text-[11px] font-black uppercase tracking-wider rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-200 active:scale-95 whitespace-nowrap"
+                    >
+                      + Add Student
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
+
+        <AddStudentModal
+          isOpen={!!inviteClass}
+          onClose={() => setInviteClass(null)}
+          classData={inviteClass}
+        />
       </div>
 
       {/* Create class modal */}

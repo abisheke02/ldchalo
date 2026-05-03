@@ -221,6 +221,15 @@ const getClassStudents = async (classId, teacherId) => {
   }
 };
 
+const getClass = async (classId, teacherId) => {
+  const { rows } = await query(
+    `SELECT * FROM classes WHERE id = $1 AND teacher_id = $2`,
+    [classId, teacherId]
+  );
+  if (!rows.length) throw Object.assign(new Error('Class not found'), { status: 404 });
+  return rows[0];
+};
+
 const getTeacherClasses = async (teacherId) => {
   try {
     const { rows } = await query(
@@ -245,5 +254,5 @@ module.exports = {
   createSchool, registerSchool, joinSchoolByCode, getSchoolInfo,
   createTeacherInvite, acceptTeacherInvite,
   linkParentToStudent, resolveParentLink,
-  createClass, getClassStudents, getTeacherClasses,
+  createClass, getClassStudents, getTeacherClasses, getClass,
 };
