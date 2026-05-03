@@ -12,7 +12,7 @@ const AddStudentModal = ({ isOpen, onClose, classData, onStudentAdded }) => {
 
   useEffect(() => {
     if (!isOpen) return;
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
     fetch('/api/schools/classes', {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
@@ -35,7 +35,7 @@ const AddStudentModal = ({ isOpen, onClose, classData, onStudentAdded }) => {
     if (!name.trim()) { toast.error('Student name is required'); return; }
     setLoading(true);
     try {
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
       const targetClassId = selectedClass || classData.id;
       const resp = await fetch(`/api/schools/classes/${targetClassId}/students`, {
         method: 'POST',
