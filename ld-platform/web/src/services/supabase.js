@@ -1,10 +1,9 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Supabase credentials missing in .env');
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Supabase removed — auth is now handled by the local PostgreSQL backend.
+export const supabase = {
+  auth: {
+    signInWithOtp: async () => ({ error: new Error('Supabase removed. Use email+password login.') }),
+    verifyOtp:     async () => ({ error: new Error('Supabase removed. Use email+password login.') }),
+    getUser:       async () => ({ data: { user: null }, error: null }),
+    signOut:       async () => ({}),
+  },
+};

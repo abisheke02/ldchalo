@@ -199,10 +199,64 @@ const logout = async (token, userId) => {
   await query(`UPDATE refresh_tokens SET revoked = TRUE WHERE user_id = $1`, [userId]).catch(() => {});
 };
 
+const loginWithEmailPassword = async (email, password) => {
+  const result = await query(
+    `SELECT id, name, role, school_id, child_id, password_hash FROM users WHERE email = $1`,
+    [email]
+  );
+  if (!result.rows.length)
+    throw Object.assign(new Error('No account found with this email'), { status: 401 });
+
+  const user = result.rows[0];
+  if (!user.password_hash)
+    throw Object.assign(new Error('Password not set. Contact admin.'), { status: 401 });
+
+  const valid = await bcrypt.compare(password, user.password_hash);
+  if (!valid)
+    throw Object.assign(new Error('Invalid email or password'), { status: 401 });
+
+  const payload      = { userId: user.id, role: user.role, schoolId: user.school_id };
+  const token        = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: ACCESS_TOKEN_TTL });
+  const refreshToken = await issueRefreshToken(user.id).catch(() => null);
+  await set(`session:${user.id}`, payload, 24 * 3600);
+
+  return { token, refreshToken, user: { id: user.id, name: user.name, role: user.role, school_id: user.school_id, child_id: user.child_id }, isNewUser: false };
+};
+
+const registerUser = async ({ name, email, password, role = 'teacher' }) => {
+  if (!name || !email || !password)
+    throw Object.assign(new Error('name, email and password are required'), { status: 400 });
+  if (!['teacher', 'parent'].includes(role))
+    throw Object.assign(new Error('role must be teacher or parent'), { status: 400 });
+
+  const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
+  if (existing.rows.length)
+    throw Object.assign(new Error('An account with this email already exists'), { status: 409 });
+
+  const hash = await bcrypt.hash(password, 10);
+  const id   = uuidv4();
+  const ins  = await query(
+    `INSERT INTO users (id, name, email, password_hash, role, created_at)
+     VALUES ($1, $2, $3, $4, $5, NOW())
+     RETURNING id, name, role, school_id, child_id`,
+    [id, name, email, hash, role]
+  );
+
+  const user         = ins.rows[0];
+  const payload      = { userId: user.id, role: user.role, schoolId: user.school_id };
+  const token        = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: ACCESS_TOKEN_TTL });
+  const refreshToken = await issueRefreshToken(user.id).catch(() => null);
+  await set(`session:${user.id}`, payload, 24 * 3600);
+
+  return { token, refreshToken, user: { id: user.id, name: user.name, role: user.role, school_id: user.school_id, child_id: user.child_id }, isNewUser: true };
+};
+
 module.exports = {
   loginWithFirebaseToken,
   loginWithSupabaseToken,
   loginWithCredentials,
+  loginWithEmailPassword,
+  registerUser,
   refreshAccessToken,
   logout,
 };

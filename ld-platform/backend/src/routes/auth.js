@@ -5,6 +5,8 @@ const {
   loginWithFirebaseToken,
   loginWithSupabaseToken,
   loginWithCredentials,
+  loginWithEmailPassword,
+  registerUser,
   refreshAccessToken,
   logout,
 } = require('../services/authService');
@@ -44,25 +46,41 @@ router.post('/demo', (req, res) => {
   }
 });
 
-// POST /api/auth/login  — Firebase (mobile) or Supabase (web) token
+// POST /api/auth/login  — email+password (web) | Firebase (mobile) | Supabase (legacy)
 router.post('/login', async (req, res, next) => {
   try {
-    const schema = Joi.object({
-      firebaseIdToken: Joi.string().optional(),
-      supabaseToken:   Joi.string().optional(),
-      fcmToken:        Joi.string().optional(),
-    }).or('firebaseIdToken', 'supabaseToken');
+    const { email, password, firebaseIdToken, supabaseToken, fcmToken } = req.body || {};
 
-    const { error, value } = schema.validate(req.body);
-    if (error) return res.status(400).json({ error: error.details[0].message });
+    if (email && password) {
+      const result = await loginWithEmailPassword(email, password);
+      return res.json(result);
+    }
 
-    const result = value.supabaseToken
-      ? await loginWithSupabaseToken(value.supabaseToken, value.fcmToken)
-      : await loginWithFirebaseToken(value.firebaseIdToken, value.fcmToken);
+    if (firebaseIdToken) {
+      const result = await loginWithFirebaseToken(firebaseIdToken, fcmToken);
+      return res.json(result);
+    }
 
-    res.json(result);
+    if (supabaseToken) {
+      const result = await loginWithSupabaseToken(supabaseToken, fcmToken);
+      return res.json(result);
+    }
+
+    return res.status(400).json({ error: 'Provide email+password or firebaseIdToken' });
   } catch (err) {
     next(err);
+  }
+});
+
+// POST /api/auth/register — self-registration for teachers and parents
+router.post('/register', async (req, res, next) => {
+  try {
+    const { name, email, password, role } = req.body || {};
+    const result = await registerUser({ name, email, password, role });
+    res.status(201).json(result);
+  } catch (err) {
+    const status = err.status || 500;
+    res.status(status).json({ error: err.message });
   }
 });
 
