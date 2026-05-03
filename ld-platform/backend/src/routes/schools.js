@@ -203,4 +203,72 @@ router.get('/classes/:classId', requireAuth, requireRole('teacher','admin'), asy
   } catch (err) { next(err); }
 });
 
+// POST /api/schools/classes/:classId/students — teacher manually adds a student
+router.post('/classes/:classId/students', requireAuth, requireRole('teacher','admin'), async (req, res, next) => {
+  try {
+    const schema = Joi.object({
+      name:  Joi.string().min(2).max(100).required(),
+      phone: Joi.string().pattern(/^\+?[0-9]{7,15}$/).optional().allow('', null),
+      email: Joi.string().email().optional().allow('', null),
+      grade: Joi.number().integer().min(1).max(12).optional(),
+    });
+    const { error, value } = schema.validate(req.body);
+    if (error) return res.status(400).json({ error: error.details[0].message });
+
+    const { classId } = req.params;
+    const schoolId = req.user.schoolId;
+
+    // Find or create student user
+    let userId;
+    const identifier = value.phone || value.email;
+    if (identifier) {
+      const col = value.phone ? 'phone' : 'email';
+      const existing = await query(`SELECT id FROM users WHERE ${col} = $1`, [identifier]);
+      if (existing.rows.length) {
+        userId = existing.rows[0].id;
+      }
+    }
+
+    if (!userId) {
+      const { v4: uuidv4 } = require('uuid');
+      const newId = uuidv4();
+      const result = await query(
+        `INSERT INTO users (id, name, phone, email, role, school_id, created_at)
+         VALUES ($1, $2, $3, $4, 'student', $5, NOW())
+         RETURNING id`,
+        [newId, value.name, value.phone || null, value.email || null, schoolId]
+      );
+      userId = result.rows[0].id;
+
+      // Create student profile record
+      await query(
+        `INSERT INTO students (id, user_id, class_grade, created_at)
+         VALUES (uuid_generate_v4(), $1, $2, NOW())
+         ON CONFLICT (user_id) DO NOTHING`,
+        [userId, value.grade || null]
+      ).catch(() => {});
+    } else {
+      // Update name if user exists
+      await query(`UPDATE users SET name = $1, school_id = $2, role = 'student' WHERE id = $3`,
+        [value.name, schoolId, userId]);
+    }
+
+    // Add to class
+    await query(
+      `INSERT INTO class_students (class_id, student_id, joined_at)
+       VALUES ($1, $2, NOW())
+       ON CONFLICT (class_id, student_id) DO NOTHING`,
+      [classId, userId]
+    );
+
+    const student = await query(
+      `SELECT u.id, u.name, u.phone, u.email, s.class_grade
+       FROM users u LEFT JOIN students s ON s.user_id = u.id WHERE u.id = $1`,
+      [userId]
+    );
+
+    res.status(201).json({ student: student.rows[0], message: 'Student added successfully' });
+  } catch (err) { next(err); }
+});
+
 module.exports = router;
