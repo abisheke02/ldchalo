@@ -1,6 +1,7 @@
 const express = require('express');
 const Joi = require('joi');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const {
   loginWithFirebaseToken,
   loginWithSupabaseToken,
@@ -11,6 +12,7 @@ const {
   logout,
 } = require('../services/authService');
 const { requireAuth } = require('../middleware/auth');
+const { query } = require('../config/database');
 
 const router = express.Router();
 
@@ -128,6 +130,65 @@ router.post('/logout', requireAuth, async (req, res) => {
 // GET /api/auth/me
 router.get('/me', requireAuth, (req, res) => {
   res.json({ user: req.user });
+});
+
+// GET /api/auth/student-invite/:token — validate invite token
+router.get('/student-invite/:token', async (req, res) => {
+  try {
+    const result = await query(
+      `SELECT id, name, email, invite_token_expires_at FROM users
+       WHERE invite_token = $1 AND role = 'student'`,
+      [req.params.token]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Invalid or expired invite link' });
+    const user = result.rows[0];
+    if (new Date(user.invite_token_expires_at) < new Date()) {
+      return res.status(410).json({ error: 'This invite link has expired. Ask your teacher for a new one.' });
+    }
+    res.json({ name: user.name, email: user.email });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not validate invite' });
+  }
+});
+
+// POST /api/auth/student-invite/:token — activate student account (set password)
+router.post('/student-invite/:token', async (req, res) => {
+  try {
+    const { password } = req.body || {};
+    if (!password || password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    const result = await query(
+      `SELECT id, name, email, role, school_id, invite_token_expires_at FROM users
+       WHERE invite_token = $1 AND role = 'student'`,
+      [req.params.token]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Invalid or expired invite link' });
+    const user = result.rows[0];
+    if (new Date(user.invite_token_expires_at) < new Date()) {
+      return res.status(410).json({ error: 'This invite link has expired. Ask your teacher for a new one.' });
+    }
+
+    const hash = await bcrypt.hash(password, 10);
+    await query(
+      `UPDATE users SET password_hash = $1, invite_token = NULL, invite_token_expires_at = NULL WHERE id = $2`,
+      [hash, user.id]
+    );
+
+    const token = jwt.sign(
+      { userId: user.id, role: user.role, schoolId: user.school_id },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.json({
+      token,
+      user: { id: user.id, name: user.name, email: user.email, role: user.role, school_id: user.school_id },
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not activate account' });
+  }
 });
 
 module.exports = router;

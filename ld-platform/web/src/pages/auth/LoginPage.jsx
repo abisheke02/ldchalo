@@ -95,7 +95,7 @@ const LoginPage = () => {
       setDemoAuth(data.user, data.token);
       trackLogin('email', data.user.role);
       toast.success(`Welcome back, ${data.user.name || 'User'}!`);
-      const dest = data.user.role === 'parent' ? '/parent' : '/dashboard';
+      const dest = data.user.role === 'parent' ? '/parent' : data.user.role === 'student' ? '/student' : '/dashboard';
       if (data.isNewUser) setPendingNav(dest);
       else navigate(dest);
     } catch (err) {
@@ -119,7 +119,7 @@ const LoginPage = () => {
       if (!resp.ok) throw new Error(data.error || 'Registration failed');
       setDemoAuth(data.user, data.token);
       toast.success('Account created! Welcome.');
-      const dest = data.user.role === 'parent' ? '/parent' : '/dashboard';
+      const dest = data.user.role === 'parent' ? '/parent' : data.user.role === 'student' ? '/student' : '/dashboard';
       setPendingNav(dest);
     } catch (err) {
       toast.error(err.message || 'Registration failed');
@@ -140,18 +140,18 @@ const LoginPage = () => {
 
           {/* Portal tabs */}
           <div className="flex bg-slate-100 p-1 rounded-xl mb-6">
-            {['teacher', 'parent', 'admin'].map((tab) => (
+            {['teacher', 'student', 'parent', 'admin'].map((tab) => (
               <button
                 key={tab}
                 type="button"
                 onClick={() => { setPortalTab(tab); setMode('login'); }}
-                className={`flex-1 py-2 px-2 rounded-lg text-xs font-bold transition-all capitalize ${
+                className={`flex-1 py-2 px-1 rounded-lg text-xs font-bold transition-all capitalize ${
                   portalTab === tab
-                    ? 'bg-white shadow-sm ' + (tab === 'admin' ? 'text-purple-700' : tab === 'parent' ? 'text-green-700' : 'text-blue-700')
+                    ? 'bg-white shadow-sm ' + (tab === 'admin' ? 'text-purple-700' : tab === 'parent' ? 'text-green-700' : tab === 'student' ? 'text-orange-600' : 'text-blue-700')
                     : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
-                {tab === 'teacher' ? '🏫' : tab === 'parent' ? '👨‍👩‍👧' : '🔑'} {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                {tab === 'teacher' ? '🏫' : tab === 'parent' ? '👨‍👩‍👧' : tab === 'student' ? '🎒' : '🔑'} {tab.charAt(0).toUpperCase() + tab.slice(1)}
               </button>
             ))}
           </div>
@@ -188,6 +188,47 @@ const LoginPage = () => {
               >
                 {loading ? 'Signing in…' : 'Sign In as Admin'}
               </button>
+            </form>
+          )}
+
+          {/* Student form — email+password only, no registration */}
+          {portalTab === 'student' && (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="bg-orange-50 border border-orange-100 rounded-xl px-4 py-3 text-xs text-orange-700 font-medium">
+                Students: log in with the email your teacher used to invite you.
+              </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-bold text-slate-700">Email</label>
+                <input
+                  type="email"
+                  placeholder="your@gmail.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full border-2 border-slate-100 rounded-xl px-4 py-3 text-base focus:outline-none focus:border-orange-500 transition-colors"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-bold text-slate-700">Password</label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full border-2 border-slate-100 rounded-xl px-4 py-3 text-base focus:outline-none focus:border-orange-500 transition-colors"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-xl text-lg shadow-lg shadow-orange-200 transition-all disabled:bg-orange-300"
+              >
+                {loading ? 'Signing in…' : 'Student Login'}
+              </button>
+              <p className="text-center text-xs text-slate-400">
+                First time? Check your email for an invite link from your teacher.
+              </p>
             </form>
           )}
 

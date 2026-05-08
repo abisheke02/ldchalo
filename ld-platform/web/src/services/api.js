@@ -137,9 +137,16 @@ export const complianceAPI = {
 
 export const adminAPI = {
   getSchools: () => api.get('/admin/schools'),
-  updateSchool: (id, data) => api.put(`/admin/schools/${id}`, data),
+  createSchool: (data) => api.post('/admin/schools', data),
+  updateSchool: (id, data) => api.patch(`/admin/schools/${id}`, data),
   getOverview: () => api.get('/analytics/admin/overview'),
   triggerCron: (job) => api.post(`/admin/cron/${job}`),
+  // School detail
+  getSchoolClasses: (schoolId) => api.get(`/admin/schools/${schoolId}/classes`),
+  createSchoolClass: (schoolId, data) => api.post(`/admin/schools/${schoolId}/classes`, data),
+  getSchoolStudents: (schoolId) => api.get(`/admin/schools/${schoolId}/students`),
+  inviteStudent: (schoolId, data) => api.post(`/admin/schools/${schoolId}/invite-student`, data),
+  // Exercises & questions
   getExercises: (params) => api.get('/admin/exercises', { params }),
   createExercise: (data) => api.post('/admin/exercises', data),
   updateExercise: (id, data) => api.patch(`/admin/exercises/${id}`, data),

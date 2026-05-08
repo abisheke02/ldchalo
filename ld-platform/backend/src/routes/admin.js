@@ -4,9 +4,12 @@
 
 const express = require('express');
 const Joi = require('joi');
+const { v4: uuidv4 } = require('uuid');
+const bcrypt = require('bcryptjs');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { query } = require('../config/database');
 const { startCronJobs, runNightlyErrorPatterns, runWeeklyStudentRecs } = require('../jobs/cronJobs');
+const { sendStudentInvite } = require('../services/emailService');
 
 const router = express.Router();
 
@@ -346,6 +349,139 @@ router.delete('/questions/:id', requireAuth, requireRole('admin'), async (req, r
     const result = await query(`DELETE FROM test_questions WHERE id = $1 RETURNING id`, [req.params.id]);
     if (!result.rows.length) return res.status(404).json({ error: 'Question not found' });
     res.json({ deleted: true });
+  } catch (err) { next(err); }
+});
+
+// ─── GET /api/admin/schools/:schoolId/classes ────────────────────────────────
+router.get('/schools/:schoolId/classes', requireAuth, requireRole('admin'), async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT c.id, c.class_name, c.join_code, c.created_at,
+              COUNT(cs.student_id) AS student_count
+       FROM classes c
+       LEFT JOIN class_students cs ON cs.class_id = c.id
+       WHERE c.school_id = $1
+       GROUP BY c.id
+       ORDER BY c.created_at ASC`,
+      [req.params.schoolId]
+    );
+    res.json({ classes: result.rows });
+  } catch (err) { next(err); }
+});
+
+// ─── POST /api/admin/schools/:schoolId/classes ───────────────────────────────
+router.post('/schools/:schoolId/classes', requireAuth, requireRole('admin'), async (req, res, next) => {
+  try {
+    const { className } = req.body;
+    if (!className?.trim()) return res.status(400).json({ error: 'className is required' });
+
+    const joinCode = Math.random().toString(36).toUpperCase().slice(2, 8);
+    const result = await query(
+      `INSERT INTO classes (id, school_id, class_name, join_code, created_by, created_at)
+       VALUES (uuid_generate_v4(), $1, $2, $3, $4, NOW())
+       RETURNING *`,
+      [req.params.schoolId, className.trim(), joinCode, req.user.userId]
+    );
+    res.status(201).json({ class: result.rows[0] });
+  } catch (err) { next(err); }
+});
+
+// ─── GET /api/admin/schools/:schoolId/students ───────────────────────────────
+router.get('/schools/:schoolId/students', requireAuth, requireRole('admin'), async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT u.id, u.name, u.email, u.phone, u.created_at,
+              c.class_name, c.id as class_id
+       FROM users u
+       LEFT JOIN class_students cs ON cs.student_id = u.id
+       LEFT JOIN classes c ON c.id = cs.class_id
+       WHERE u.school_id = $1 AND u.role = 'student'
+       ORDER BY u.created_at DESC`,
+      [req.params.schoolId]
+    );
+    res.json({ students: result.rows });
+  } catch (err) { next(err); }
+});
+
+// ─── POST /api/admin/schools/:schoolId/invite-student ────────────────────────
+// Creates student account (if not exists) and sends email invite link
+router.post('/schools/:schoolId/invite-student', requireAuth, requireRole('admin'), async (req, res, next) => {
+  try {
+    const schema = Joi.object({
+      name:    Joi.string().min(2).max(100).required(),
+      email:   Joi.string().email().required(),
+      classId: Joi.string().uuid().optional(),
+    });
+    const { error, value } = schema.validate(req.body);
+    if (error) return res.status(400).json({ error: error.details[0].message });
+
+    const { schoolId } = req.params;
+
+    // Get school name for email
+    const schoolRes = await query(`SELECT name FROM schools WHERE id = $1`, [schoolId]);
+    if (!schoolRes.rows.length) return res.status(404).json({ error: 'School not found' });
+    const schoolName = schoolRes.rows[0].name;
+
+    // Get class name
+    let className = 'your class';
+    if (value.classId) {
+      const classRes = await query(`SELECT class_name FROM classes WHERE id = $1`, [value.classId]);
+      if (classRes.rows.length) className = classRes.rows[0].class_name;
+    }
+
+    // Find or create student user
+    let userId;
+    const existing = await query(`SELECT id FROM users WHERE email = $1`, [value.email]);
+    if (existing.rows.length) {
+      userId = existing.rows[0].id;
+      await query(`UPDATE users SET name = $1, school_id = $2, role = 'student' WHERE id = $3`,
+        [value.name, schoolId, userId]);
+    } else {
+      const newId = uuidv4();
+      await query(
+        `INSERT INTO users (id, name, email, role, school_id, created_at)
+         VALUES ($1, $2, $3, 'student', $4, NOW())`,
+        [newId, value.name, value.email, schoolId]
+      );
+      await query(
+        `INSERT INTO students (id, user_id, created_at) VALUES (uuid_generate_v4(), $1, NOW())
+         ON CONFLICT (user_id) DO NOTHING`,
+        [newId]
+      ).catch(() => {});
+      userId = newId;
+    }
+
+    // Enroll in class
+    if (value.classId) {
+      await query(
+        `INSERT INTO class_students (class_id, student_id, joined_at)
+         VALUES ($1, $2, NOW()) ON CONFLICT (class_id, student_id) DO NOTHING`,
+        [value.classId, userId]
+      );
+    }
+
+    // Generate invite token (24h)
+    const token = uuidv4().replace(/-/g, '');
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await query(
+      `UPDATE users SET invite_token = $1, invite_token_expires_at = $2 WHERE id = $3`,
+      [token, expires, userId]
+    );
+
+    // Send email (falls back to console log if SMTP not configured)
+    const emailResult = await sendStudentInvite({
+      toEmail: value.email,
+      studentName: value.name,
+      className,
+      schoolName,
+      token,
+    });
+
+    res.status(201).json({
+      message: 'Student invited successfully',
+      studentId: userId,
+      inviteLink: emailResult.preview || undefined,
+    });
   } catch (err) { next(err); }
 });
 

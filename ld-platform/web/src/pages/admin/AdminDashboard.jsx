@@ -8,6 +8,78 @@ import toast from 'react-hot-toast';
 import Layout from '../../components/Layout';
 import { adminAPI } from '../../services/api';
 
+const CreateSchoolModal = ({ onClose, onCreated }) => {
+  const [name, setName] = useState('');
+  const [location, setLocation] = useState('');
+  const [plan, setPlan] = useState('free');
+  const [maxStudents, setMaxStudents] = useState(30);
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await adminAPI.createSchool({ name: name.trim(), location: location.trim(), planType: plan, maxStudents: Number(maxStudents) });
+      toast.success('School created!');
+      onCreated();
+      onClose();
+    } catch (err) {
+      toast.error(err.error || 'Failed to create school');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-7">
+        <h3 className="text-xl font-black text-slate-800 mb-5">Create School / Institute</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-600 mb-1">School Name *</label>
+            <input type="text" placeholder="e.g. St. Mary's School" value={name}
+              onChange={(e) => setName(e.target.value)} required
+              className="w-full border-2 border-slate-100 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition" />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-600 mb-1">Location *</label>
+            <input type="text" placeholder="e.g. Chennai, Tamil Nadu" value={location}
+              onChange={(e) => setLocation(e.target.value)} required
+              className="w-full border-2 border-slate-100 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1">Plan</label>
+              <select value={plan} onChange={(e) => setPlan(e.target.value)}
+                className="w-full border-2 border-slate-100 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition text-sm">
+                <option value="free">Free</option>
+                <option value="basic">Basic</option>
+                <option value="pro">Pro</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1">Max Students</label>
+              <input type="number" min="1" max="10000" value={maxStudents}
+                onChange={(e) => setMaxStudents(e.target.value)}
+                className="w-full border-2 border-slate-100 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition" />
+            </div>
+          </div>
+          <div className="flex gap-3 pt-1">
+            <button type="button" onClick={onClose}
+              className="flex-1 border border-slate-200 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-50 transition">
+              Cancel
+            </button>
+            <button type="submit" disabled={saving}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition disabled:bg-blue-300">
+              {saving ? 'Creating…' : 'Create School'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const LD_COLORS = {
   dyslexia: '#8B5CF6',
   dysgraphia: '#F97316',
@@ -29,13 +101,16 @@ const AdminDashboard = () => {
   const [overview, setOverview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [triggerLoading, setTriggerLoading] = useState('');
+  const [showCreateSchool, setShowCreateSchool] = useState(false);
 
-  useEffect(() => {
+  const loadOverview = () => {
     adminAPI.getOverview()
       .then(setOverview)
       .catch(() => toast.error('Could not load admin overview'))
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { loadOverview(); }, []);
 
   const triggerCron = async (job) => {
     setTriggerLoading(job);
@@ -64,6 +139,7 @@ const AdminDashboard = () => {
   const improve = overview?.platformImprovement;
 
   return (
+    <>
     <Layout>
       <div className="p-8 max-w-7xl mx-auto space-y-10">
         {/* Simple & Bold Header */}
@@ -73,6 +149,12 @@ const AdminDashboard = () => {
             <p className="text-[var(--text-muted)] font-medium text-sm mt-1">Platform management and institutional intelligence</p>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowCreateSchool(true)}
+              className="px-6 py-3 bg-emerald-600 text-white rounded-2xl text-xs font-bold hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200 active:scale-95"
+            >
+              + New School
+            </button>
             <button
               onClick={() => navigate('/admin/cms')}
               className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-xs font-bold hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 active:scale-95"
@@ -179,7 +261,7 @@ const AdminDashboard = () => {
                <div className="overflow-x-auto">
                  <table className="w-full text-sm">
                    <thead className="bg-[var(--bg-main)] text-[10px] text-[var(--text-muted)] font-black uppercase tracking-[0.2em] border-b border-[var(--border-main)]">
-                     <tr>{['Institution', 'Licensing', 'Enrollment', 'Capacity', 'Access Expiry'].map(h => <th key={h} className="px-10 py-6 text-left">{h}</th>)}</tr>
+                     <tr>{['Institution', 'Licensing', 'Enrollment', 'Capacity', 'Access Expiry', ''].map(h => <th key={h} className="px-10 py-6 text-left">{h}</th>)}</tr>
                    </thead>
                    <tbody className="divide-y divide-[var(--border-main)]">
                      {(overview?.schools || []).map((school) => {
@@ -196,6 +278,14 @@ const AdminDashboard = () => {
                            <td className="px-10 py-7 font-bold text-[var(--text-muted)] opacity-50">{fmt(school.max_students)}</td>
                            <td className={`px-10 py-7 font-black text-xs ${expired ? 'text-rose-500' : 'text-[var(--text-muted)]'}`}>
                              {school.subscription_expires_at ? new Date(school.subscription_expires_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Lifetime'}
+                           </td>
+                           <td className="px-10 py-7">
+                             <button
+                               onClick={() => navigate(`/admin/schools/${school.id}`)}
+                               className="px-4 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 transition"
+                             >
+                               Manage
+                             </button>
                            </td>
                          </tr>
                        );
@@ -235,6 +325,14 @@ const AdminDashboard = () => {
         )}
       </div>
     </Layout>
+
+    {showCreateSchool && (
+      <CreateSchoolModal
+        onClose={() => setShowCreateSchool(false)}
+        onCreated={() => { setLoading(true); loadOverview(); }}
+      />
+    )}
+    </>
   );
 };
 

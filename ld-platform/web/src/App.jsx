@@ -10,6 +10,8 @@ import ClassDetailPage from './pages/dashboard/ClassDetailPage';
 import StudentDetailPage from './pages/dashboard/StudentDetailPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminCMS from './pages/admin/AdminCMS';
+import AdminSchoolPage from './pages/admin/AdminSchoolPage';
+import StudentInvitePage from './pages/auth/StudentInvitePage';
 import ParentScorecard from './pages/parent/ParentScorecard';
 import MessagingPage from './pages/messages/MessagingPage';
 import StudentDashboardWeb from './pages/student/StudentDashboardWeb';
@@ -45,6 +47,7 @@ const App = () => (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/invite/:token" element={<InviteAcceptPage />} />
+      <Route path="/student-invite/:token" element={<StudentInvitePage />} />
 
       {/* Teacher onboarding — shown when no school_id yet */}
       <Route
@@ -109,6 +112,14 @@ const App = () => (
         element={
           <ProtectedRoute allowedRoles={['admin']}>
             <AdminCMS />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/schools/:schoolId"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <AdminSchoolPage />
           </ProtectedRoute>
         }
       />
