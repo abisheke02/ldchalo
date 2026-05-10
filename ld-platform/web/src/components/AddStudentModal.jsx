@@ -10,12 +10,17 @@ const AddStudentModal = ({ isOpen, onClose, classData, onStudentAdded }) => {
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // Invite by email state
+  const [inviteName, setInviteName] = useState('');
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteLink, setInviteLink] = useState('');
+
+  const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+  const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+
   useEffect(() => {
     if (!isOpen) return;
-    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
-    fetch('/api/schools/classes', {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
+    fetch('/api/schools/classes', { headers: authHeader })
       .then((r) => r.json())
       .then((d) => setClasses(d.classes || []))
       .catch(() => {});
@@ -23,7 +28,12 @@ const AddStudentModal = ({ isOpen, onClose, classData, onStudentAdded }) => {
 
   if (!isOpen || !classData) return null;
 
-  const reset = () => { setName(''); setPhone(''); setEmail(''); setSelectedClass(''); };
+  const reset = () => {
+    setName(''); setPhone(''); setEmail(''); setSelectedClass('');
+    setInviteName(''); setInviteEmail(''); setInviteLink('');
+  };
+
+  const handleTabChange = (t) => { setTab(t); setInviteLink(''); };
 
   const copyCode = () => {
     navigator.clipboard.writeText(classData.join_code);
@@ -35,14 +45,10 @@ const AddStudentModal = ({ isOpen, onClose, classData, onStudentAdded }) => {
     if (!name.trim()) { toast.error('Student name is required'); return; }
     setLoading(true);
     try {
-      const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
       const targetClassId = selectedClass || classData.id;
       const resp = await fetch(`/api/schools/classes/${targetClassId}/students`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: { 'Content-Type': 'application/json', ...authHeader },
         body: JSON.stringify({
           name: name.trim(),
           phone: phone.trim() || undefined,
@@ -57,6 +63,34 @@ const AddStudentModal = ({ isOpen, onClose, classData, onStudentAdded }) => {
       onClose();
     } catch (err) {
       toast.error(err.message || 'Failed to add student');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInvite = async (e) => {
+    e.preventDefault();
+    if (!inviteName.trim() || !inviteEmail.trim()) return;
+    setLoading(true);
+    setInviteLink('');
+    try {
+      const resp = await fetch(`/api/schools/classes/${classData.id}/invite-student`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeader },
+        body: JSON.stringify({ name: inviteName.trim(), email: inviteEmail.trim() }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Failed to send invite');
+      toast.success('Invite sent!');
+      if (data.inviteLink) {
+        setInviteLink(data.inviteLink);
+      } else {
+        reset();
+        onStudentAdded?.();
+        onClose();
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to send invite');
     } finally {
       setLoading(false);
     }
@@ -77,78 +111,102 @@ const AddStudentModal = ({ isOpen, onClose, classData, onStudentAdded }) => {
 
           {/* Tabs */}
           <div className="flex bg-slate-100 p-1 rounded-xl mb-6">
-            <button type="button" onClick={() => setTab('manual')}
-              className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${tab === 'manual' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500'}`}>
-              ✏️ Add Manually
-            </button>
-            <button type="button" onClick={() => setTab('code')}
-              className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${tab === 'code' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500'}`}>
-              🔑 Join Code
-            </button>
+            {[
+              { key: 'manual', label: '✏️ Manual' },
+              { key: 'invite', label: '✉️ Email Invite' },
+              { key: 'code',   label: '🔑 Join Code' },
+            ].map((t) => (
+              <button key={t.key} type="button" onClick={() => handleTabChange(t.key)}
+                className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${tab === t.key ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500'}`}>
+                {t.label}
+              </button>
+            ))}
           </div>
 
-          {/* Manual add form */}
+          {/* Manual add */}
           {tab === 'manual' && (
             <form onSubmit={handleAdd} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-600 mb-1">Student Name *</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Arjun Kumar"
-                  value={name}
+                <input type="text" placeholder="e.g. Arjun Kumar" value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full border-2 border-slate-100 rounded-xl px-4 py-3 text-base focus:outline-none focus:border-blue-500 transition-colors"
-                  required
-                />
+                  required />
               </div>
-
               <div>
                 <label className="block text-xs font-bold text-slate-600 mb-1">Class</label>
-                <select
-                  value={selectedClass}
-                  onChange={(e) => setSelectedClass(e.target.value)}
-                  className="w-full border-2 border-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 transition-colors"
-                >
+                <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)}
+                  className="w-full border-2 border-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 transition-colors">
                   <option value="">— Current class ({classData.class_name}) —</option>
-                  {classes.map((c) => (
-                    <option key={c.id} value={c.id}>{c.class_name}</option>
-                  ))}
+                  {classes.map((c) => <option key={c.id} value={c.id}>{c.class_name}</option>)}
                 </select>
               </div>
-
               <div>
                 <label className="block text-xs font-bold text-slate-600 mb-1">Phone (optional)</label>
-                <input
-                  type="tel"
-                  placeholder="+91XXXXXXXXXX"
-                  value={phone}
+                <input type="tel" placeholder="+91XXXXXXXXXX" value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full border-2 border-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 transition-colors"
-                />
+                  className="w-full border-2 border-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 transition-colors" />
               </div>
-
               <div>
                 <label className="block text-xs font-bold text-slate-600 mb-1">Email (optional)</label>
-                <input
-                  type="email"
-                  placeholder="student@email.com"
-                  value={email}
+                <input type="email" placeholder="student@email.com" value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full border-2 border-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 transition-colors"
-                />
+                  className="w-full border-2 border-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 transition-colors" />
               </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-blue-200 active:scale-95 disabled:bg-blue-300"
-              >
+              <button type="submit" disabled={loading}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-blue-200 active:scale-95 disabled:bg-blue-300">
                 {loading ? 'Adding…' : '+ Add Student'}
               </button>
             </form>
           )}
 
-          {/* Join code tab */}
+          {/* Email invite */}
+          {tab === 'invite' && (
+            <div className="space-y-4">
+              {inviteLink ? (
+                <>
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                    <p className="text-xs font-bold text-amber-700 mb-2">SMTP not configured — share this link with the student:</p>
+                    <p className="text-xs font-mono break-all text-slate-700">{inviteLink}</p>
+                  </div>
+                  <button onClick={() => { navigator.clipboard.writeText(inviteLink); toast.success('Link copied!'); }}
+                    className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition">
+                    Copy Invite Link
+                  </button>
+                  <button onClick={() => { reset(); onStudentAdded?.(); onClose(); }}
+                    className="w-full border border-slate-200 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-50 transition">
+                    Done
+                  </button>
+                </>
+              ) : (
+                <form onSubmit={handleInvite} className="space-y-4">
+                  <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-xs text-blue-700 font-medium">
+                    An invite link will be sent to the student's Gmail. They set their own password and get auto-enrolled in <strong>{classData.class_name}</strong>.
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1">Student Name *</label>
+                    <input type="text" placeholder="e.g. Priya Sharma" value={inviteName}
+                      onChange={(e) => setInviteName(e.target.value)}
+                      className="w-full border-2 border-slate-100 rounded-xl px-4 py-3 text-base focus:outline-none focus:border-blue-500 transition-colors"
+                      required />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1">Student Gmail *</label>
+                    <input type="email" placeholder="student@gmail.com" value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      className="w-full border-2 border-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                      required />
+                  </div>
+                  <button type="submit" disabled={loading}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-blue-200 active:scale-95 disabled:bg-blue-300">
+                    {loading ? 'Sending…' : '✉️ Send Invite'}
+                  </button>
+                </form>
+              )}
+            </div>
+          )}
+
+          {/* Join code */}
           {tab === 'code' && (
             <div className="text-center space-y-6">
               <div className="bg-blue-50 rounded-3xl p-8 border-2 border-blue-100 border-dashed">

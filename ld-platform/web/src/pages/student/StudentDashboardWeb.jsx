@@ -60,6 +60,12 @@ const StudentDashboardWeb = () => {
     const token = localStorage.getItem('auth_token');
     const headers = { Authorization: `Bearer ${token}` };
 
+    // Check screening status first — redirect unscreened students
+    fetch('/api/screening/status', { headers })
+      .then((r) => r.json())
+      .then((s) => { if (!s.screened) navigate('/student/screening'); })
+      .catch(() => {});
+
     Promise.all([
       fetch('/api/students/me', { headers }).then((r) => r.json()).catch(() => ({})),
       analyticsAPI.student(studentId).catch(() => null),

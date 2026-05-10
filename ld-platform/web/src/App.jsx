@@ -16,6 +16,7 @@ import ParentScorecard from './pages/parent/ParentScorecard';
 import MessagingPage from './pages/messages/MessagingPage';
 import StudentDashboardWeb from './pages/student/StudentDashboardWeb';
 import StudentTestSpace from './pages/student/StudentTestSpace';
+import StudentScreeningPage from './pages/student/StudentScreeningPage';
 import SchoolSettingsPage from './pages/settings/SchoolSettingsPage';
 import InviteAcceptPage from './pages/onboarding/InviteAcceptPage';
 
@@ -136,6 +137,14 @@ const App = () => (
         element={
           <ProtectedRoute allowedRoles={['student']}>
             <StudentDashboardWeb />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/screening"
+        element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <StudentScreeningPage />
           </ProtectedRoute>
         }
       />

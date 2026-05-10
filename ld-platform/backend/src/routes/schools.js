@@ -1,5 +1,6 @@
 const express = require('express');
 const Joi = require('joi');
+const { v4: uuidv4 } = require('uuid');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const {
   createSchool, registerSchool, joinSchoolByCode, getSchoolInfo,
@@ -8,6 +9,7 @@ const {
   createClass, getClassStudents, getTeacherClasses, getClass,
 } = require('../services/schoolService');
 const { query } = require('../config/database');
+const { sendStudentInvite } = require('../services/emailService');
 
 const router = express.Router();
 const DEMO_SCHOOL_ID = '00000000-0000-0000-0000-000000000001';
@@ -268,6 +270,68 @@ router.post('/classes/:classId/students', requireAuth, requireRole('teacher','ad
     );
 
     res.status(201).json({ student: student.rows[0], message: 'Student added successfully' });
+  } catch (err) { next(err); }
+});
+
+// POST /api/schools/classes/:classId/invite-student — teacher invites student by email
+router.post('/classes/:classId/invite-student', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
+  try {
+    const schema = Joi.object({
+      name:  Joi.string().min(2).max(100).required(),
+      email: Joi.string().email().required(),
+    });
+    const { error, value } = schema.validate(req.body);
+    if (error) return res.status(400).json({ error: error.details[0].message });
+
+    const { classId } = req.params;
+    const schoolId = req.user.schoolId;
+
+    // Get class info for the email
+    const classRes = await query(`SELECT class_name FROM classes WHERE id = $1`, [classId]);
+    if (!classRes.rows.length) return res.status(404).json({ error: 'Class not found' });
+    const className = classRes.rows[0].class_name;
+
+    const schoolRes = await query(`SELECT name FROM schools WHERE id = $1`, [schoolId]);
+    const schoolName = schoolRes.rows[0]?.name || 'your school';
+
+    // Find or create student
+    let userId;
+    const existing = await query(`SELECT id FROM users WHERE email = $1`, [value.email]);
+    if (existing.rows.length) {
+      userId = existing.rows[0].id;
+      await query(`UPDATE users SET name = $1, school_id = $2, role = 'student' WHERE id = $3`,
+        [value.name, schoolId, userId]);
+    } else {
+      const newId = uuidv4();
+      await query(
+        `INSERT INTO users (id, name, email, role, school_id, created_at) VALUES ($1,$2,$3,'student',$4,NOW())`,
+        [newId, value.name, value.email, schoolId]
+      );
+      await query(
+        `INSERT INTO students (id, user_id, created_at) VALUES (uuid_generate_v4(),$1,NOW()) ON CONFLICT (user_id) DO NOTHING`,
+        [newId]
+      ).catch(() => {});
+      userId = newId;
+    }
+
+    // Enroll in class
+    await query(
+      `INSERT INTO class_students (class_id, student_id, joined_at) VALUES ($1,$2,NOW()) ON CONFLICT DO NOTHING`,
+      [classId, userId]
+    );
+
+    // Generate invite token (24h)
+    const token = uuidv4().replace(/-/g, '');
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await query(`UPDATE users SET invite_token=$1, invite_token_expires_at=$2 WHERE id=$3`, [token, expires, userId]);
+
+    const emailResult = await sendStudentInvite({ toEmail: value.email, studentName: value.name, className, schoolName, token });
+
+    res.status(201).json({
+      message: 'Student invited successfully',
+      studentId: userId,
+      inviteLink: emailResult.preview || undefined,
+    });
   } catch (err) { next(err); }
 });
 
