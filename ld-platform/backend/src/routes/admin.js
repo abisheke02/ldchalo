@@ -352,6 +352,104 @@ router.delete('/questions/:id', requireAuth, requireRole('admin'), async (req, r
   } catch (err) { next(err); }
 });
 
+// ─── GET /api/admin/screening-questions ──────────────────────────────────────
+router.get('/screening-questions', requireAuth, requireRole('admin'), async (req, res, next) => {
+  try {
+    const { category, page = 1, limit = 20 } = req.query;
+    const offset = (page - 1) * limit;
+    const params = [limit, offset];
+    const where = category ? `WHERE category = $3` : '';
+    if (category) params.push(category);
+
+    const result = await query(
+      `SELECT id, category, ld_target, question_text, question_type,
+              options_json, correct_answer, difficulty, age_min, age_max, is_active
+       FROM screening_questions ${where}
+       ORDER BY category, difficulty ASC
+       LIMIT $1 OFFSET $2`,
+      params
+    );
+    const count = await query(
+      `SELECT COUNT(*) FROM screening_questions ${where}`,
+      category ? [category] : []
+    );
+    res.json({ questions: result.rows, total: Number(count.rows[0].count) });
+  } catch (err) { next(err); }
+});
+
+// ─── POST /api/admin/screening-questions ─────────────────────────────────────
+router.post('/screening-questions', requireAuth, requireRole('admin'), async (req, res, next) => {
+  try {
+    const schema = Joi.object({
+      category:     Joi.string().valid('phonics', 'reading', 'writing', 'math').required(),
+      ldTarget:     Joi.string().valid('dyslexia', 'dysgraphia', 'dyscalculia', 'mixed').required(),
+      questionText: Joi.string().min(5).max(1000).required(),
+      questionType: Joi.string().valid('mcq', 'speaking', 'fill_blank').default('mcq'),
+      options:      Joi.array().items(Joi.string()).min(2).max(6).required(),
+      correctAnswer:Joi.string().required(),
+      difficulty:   Joi.number().integer().min(1).max(3).default(1),
+      ageMin:       Joi.number().integer().min(5).max(18).default(6),
+      ageMax:       Joi.number().integer().min(5).max(18).default(14),
+    });
+    const { error, value } = schema.validate(req.body);
+    if (error) return res.status(400).json({ error: error.details[0].message });
+
+    const result = await query(
+      `INSERT INTO screening_questions
+         (id, category, ld_target, question_text, question_type, options_json,
+          correct_answer, difficulty, age_min, age_max, is_active, created_at)
+       VALUES (uuid_generate_v4(),$1,$2,$3,$4,$5,$6,$7,$8,$9,true,NOW())
+       RETURNING *`,
+      [value.category, value.ldTarget, value.questionText, value.questionType,
+       JSON.stringify(value.options), value.correctAnswer, value.difficulty, value.ageMin, value.ageMax]
+    );
+    res.status(201).json({ question: result.rows[0] });
+  } catch (err) { next(err); }
+});
+
+// ─── PATCH /api/admin/screening-questions/:id ─────────────────────────────────
+router.patch('/screening-questions/:id', requireAuth, requireRole('admin'), async (req, res, next) => {
+  try {
+    const schema = Joi.object({
+      questionText: Joi.string().min(5).max(1000),
+      options:      Joi.array().items(Joi.string()).min(2).max(6),
+      correctAnswer:Joi.string(),
+      difficulty:   Joi.number().integer().min(1).max(3),
+      isActive:     Joi.boolean(),
+    });
+    const { error, value } = schema.validate(req.body);
+    if (error) return res.status(400).json({ error: error.details[0].message });
+
+    const sets = [], params = [];
+    let i = 1;
+    if (value.questionText)  { sets.push(`question_text = $${i++}`);  params.push(value.questionText); }
+    if (value.options)       { sets.push(`options_json = $${i++}`);   params.push(JSON.stringify(value.options)); }
+    if (value.correctAnswer) { sets.push(`correct_answer = $${i++}`); params.push(value.correctAnswer); }
+    if (value.difficulty)    { sets.push(`difficulty = $${i++}`);     params.push(value.difficulty); }
+    if (value.isActive != null){ sets.push(`is_active = $${i++}`);    params.push(value.isActive); }
+    if (!sets.length) return res.status(400).json({ error: 'Nothing to update' });
+
+    params.push(req.params.id);
+    const result = await query(
+      `UPDATE screening_questions SET ${sets.join(', ')} WHERE id = $${i} RETURNING *`,
+      params
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Question not found' });
+    res.json({ question: result.rows[0] });
+  } catch (err) { next(err); }
+});
+
+// ─── DELETE /api/admin/screening-questions/:id ────────────────────────────────
+router.delete('/screening-questions/:id', requireAuth, requireRole('admin'), async (req, res, next) => {
+  try {
+    const result = await query(
+      `DELETE FROM screening_questions WHERE id = $1 RETURNING id`, [req.params.id]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Question not found' });
+    res.json({ deleted: true });
+  } catch (err) { next(err); }
+});
+
 // ─── GET /api/admin/schools/:schoolId/classes ────────────────────────────────
 router.get('/schools/:schoolId/classes', requireAuth, requireRole('admin'), async (req, res, next) => {
   try {

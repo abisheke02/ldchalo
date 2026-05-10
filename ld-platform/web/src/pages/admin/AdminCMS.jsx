@@ -8,6 +8,7 @@ const EXERCISE_TYPES = ['phonics', 'reading', 'writing', 'math', 'speaking'];
 const LD_TARGETS = ['dyslexia', 'dysgraphia', 'dyscalculia', 'mixed'];
 const CATEGORIES = ['phonics', 'reading', 'writing', 'math'];
 const LEVELS = [1, 2, 3, 4, 5];
+const DIFFICULTIES = [1, 2, 3];
 
 const Badge = ({ children, color = 'bg-slate-100 text-slate-600' }) => (
   <span className={`inline-block text-xs font-bold px-2 py-0.5 rounded-full ${color}`}>{children}</span>

@@ -155,6 +155,11 @@ export const adminAPI = {
   createQuestion: (data) => api.post('/admin/questions', data),
   updateQuestion: (id, data) => api.patch(`/admin/questions/${id}`, data),
   deleteQuestion: (id) => api.delete(`/admin/questions/${id}`),
+  // Screening questions
+  getScreeningQuestions: (params) => api.get('/admin/screening-questions', { params }),
+  createScreeningQuestion: (data) => api.post('/admin/screening-questions', data),
+  updateScreeningQuestion: (id, data) => api.patch(`/admin/screening-questions/${id}`, data),
+  deleteScreeningQuestion: (id) => api.delete(`/admin/screening-questions/${id}`),
 };
 
 export const reportsAPI = {
