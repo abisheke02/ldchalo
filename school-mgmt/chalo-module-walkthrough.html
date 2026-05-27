@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chalo Schools — Module Deep-Dive & Development Plan</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f4f8; color: #1a202c; }
+
+  /* Cover Page */
+  .cover {
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    color: white;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 60px 40px;
+    page-break-after: always;
+  }
+  .cover-logo {
+    width: 80px; height: 80px;
+    background: linear-gradient(135deg, #00c6ff, #0072ff);
+    border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px; margin: 0 auto 30px;
+    box-shadow: 0 20px 60px rgba(0,114,255,0.4);
+  }
+  .cover h1 { font-size: 48px; font-weight: 800; margin-bottom: 12px; letter-spacing: -1px; }
+  .cover h2 { font-size: 22px; font-weight: 300; opacity: 0.7; margin-bottom: 40px; }
+  .cover-divider { width: 80px; height: 3px; background: #00c6ff; margin: 0 auto 40px; border-radius: 2px; }
+  .cover-meta { display: flex; gap: 40px; justify-content: center; flex-wrap: wrap; }
+  .cover-meta-item { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; padding: 16px 24px; }
+  .cover-meta-item .label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.6; margin-bottom: 4px; }
+  .cover-meta-item .value { font-size: 18px; font-weight: 700; }
+  .cover-subtitle { margin-top: 60px; font-size: 14px; opacity: 0.5; }
+
+  /* TOC */
+  .toc {
+    background: white;
+    max-width: 900px;
+    margin: 40px auto;
+    border-radius: 20px;
+    padding: 50px;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.06);
+  }
+  .toc h2 { font-size: 28px; font-weight: 800; margin-bottom: 30px; color: #0072ff; }
+  .toc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .toc-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    background: #f7f9fc;
+    border-left: 3px solid #0072ff;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .toc-num { font-size: 11px; font-weight: 800; color: #0072ff; min-width: 24px; }
+
+  /* Section wrapper */
+  .section {
+    max-width: 900px;
+    margin: 40px auto;
+  }
+
+  /* Module Card */
+  .module-card {
+    background: white;
+    border-radius: 20px;
+    margin-bottom: 30px;
+    overflow: hidden;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.06);
+  }
+  .module-header {
+    padding: 30px 40px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .module-icon {
+    width: 56px; height: 56px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+    flex-shrink: 0;
+  }
+  .module-title h3 { font-size: 22px; font-weight: 800; }
+  .module-title p { font-size: 14px; opacity: 0.6; margin-top: 3px; }
+  .module-body { padding: 0 40px 30px; }
+
+  /* Step list */
+  .step-list { list-style: none; }
+  .step-item {
+    display: flex;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid #f0f4f8;
+  }
+  .step-item:last-child { border-bottom: none; }
+  .step-num {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: #e8f0fe;
+    color: #0072ff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    font-weight: 800;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .step-content h4 { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
+  .step-content p { font-size: 13px; color: #64748b; line-height: 1.5; }
+
+  /* Feature grid */
+  .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+  .feature-pill {
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #0369a1;
+    text-align: center;
+  }
+  .feature-pill.ai { background: #fdf4ff; border-color: #e9d5ff; color: #7c3aed; }
+  .feature-pill.alert { background: #fff7ed; border-color: #fed7aa; color: #c2410c; }
+  .feature-pill.green { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+
+  /* Screen mockup */
+  .screen-mockup {
+    background: #1e293b;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+    position: relative;
+  }
+  .screen-bar { display: flex; gap: 6px; margin-bottom: 14px; }
+  .screen-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-r { background: #f87171; }
+  .dot-y { background: #fbbf24; }
+  .dot-g { background: #34d399; }
+  .screen-content { background: #0f172a; border-radius: 8px; padding: 16px; }
+  .screen-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+  .screen-label { color: #64748b; font-size: 11px; width: 90px; flex-shrink: 0; }
+  .screen-val { color: #94a3b8; font-size: 12px; font-family: monospace; }
+  .screen-tag {
+    padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700;
+  }
+  .tag-green { background: #064e3b; color: #6ee7b7; }
+  .tag-yellow { background: #78350f; color: #fcd34d; }
+  .tag-red { background: #7f1d1d; color: #fca5a5; }
+  .tag-blue { background: #1e3a5f; color: #93c5fd; }
+
+  /* Section header */
+  .section-header {
+    background: linear-gradient(135deg, #0072ff, #00c6ff);
+    color: white;
+    padding: 20px 40px;
+    border-radius: 20px 20px 0 0;
+  }
+  .section-header h2 { font-size: 20px; font-weight: 800; }
+  .section-header p { font-size: 13px; opacity: 0.8; margin-top: 2px; }
+
+  /* Comparison table */
+  .compare-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+  .compare-table th {
+    background: #f8fafc;
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    border-bottom: 2px solid #e2e8f0;
+  }
+  .compare-table td {
+    padding: 12px 14px;
+    font-size: 13px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: top;
+  }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:hover td { background: #fafbff; }
+
+  /* Status badge */
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .badge-live { background: #dcfce7; color: #16a34a; }
+  .badge-planned { background: #fef3c7; color: #d97706; }
+  .badge-critical { background: #fee2e2; color: #dc2626; }
+  .badge-ai { background: #ede9fe; color: #7c3aed; }
+
+  /* Dev plan */
+  .dev-plan {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.06);
+    margin-bottom: 30px;
+  }
+  .phase-header {
+    padding: 20px 30px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .phase-num {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    font-weight: 900;
+    flex-shrink: 0;
+  }
+  .phase-info h3 { font-size: 18px; font-weight: 800; }
+  .phase-info p { font-size: 13px; opacity: 0.7; }
+  .phase-body { padding: 0 30px 24px; }
+  .phase-tasks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .phase-task {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 10px 14px;
+    background: #f8fafc;
+    border-radius: 8px;
+    font-size: 13px;
+  }
+  .phase-task .check { color: #0072ff; font-weight: 900; font-size: 14px; flex-shrink: 0; }
+  .phase-task .plus { color: #f59e0b; font-weight: 900; font-size: 14px; flex-shrink: 0; }
+  .phase-task .star { color: #7c3aed; font-weight: 900; font-size: 14px; flex-shrink: 0; }
+
+  /* Gap analysis */
+  .gap-card {
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 12px;
+    display: flex;
+    gap: 16px;
+  }
+  .gap-icon { font-size: 24px; flex-shrink: 0; }
+  .gap-content h4 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .gap-content p { font-size: 13px; opacity: 0.8; }
+  .gap-built { background: #f0fdf4; border: 1px solid #bbf7d0; }
+  .gap-planned { background: #fffbeb; border: 1px solid #fde68a; }
+  .gap-missing { background: #fff1f2; border: 1px solid #fecdd3; }
+
+  /* Footer */
+  .footer {
+    background: #1e293b;
+    color: white;
+    text-align: center;
+    padding: 40px;
+    margin-top: 60px;
+  }
+  .footer p { opacity: 0.5; font-size: 13px; }
+
+  /* Print / PDF styles */
+  @media print {
+    body { background: white; }
+    .cover { min-height: 100vh; }
+    .section, .toc, .dev-plan, .module-card { box-shadow: none; border: 1px solid #e2e8f0; }
+  }
+
+  /* Color themes per module */
+  .blue .module-header { background: linear-gradient(135deg, #eff6ff, #dbeafe); }
+  .blue .module-icon { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+  .blue .step-num { background: #dbeafe; color: #1d4ed8; }
+
+  .green .module-header { background: linear-gradient(135deg, #f0fdf4, #dcfce7); }
+  .green .module-icon { background: linear-gradient(135deg, #22c55e, #15803d); }
+  .green .step-num { background: #dcfce7; color: #15803d; }
+
+  .purple .module-header { background: linear-gradient(135deg, #fdf4ff, #ede9fe); }
+  .purple .module-icon { background: linear-gradient(135deg, #a855f7, #7c3aed); }
+  .purple .step-num { background: #ede9fe; color: #7c3aed; }
+
+  .orange .module-header { background: linear-gradient(135deg, #fff7ed, #fed7aa); }
+  .orange .module-icon { background: linear-gradient(135deg, #f97316, #c2410c); }
+  .orange .step-num { background: #fed7aa; color: #c2410c; }
+
+  .teal .module-header { background: linear-gradient(135deg, #f0fdfa, #ccfbf1); }
+  .teal .module-icon { background: linear-gradient(135deg, #14b8a6, #0f766e); }
+  .teal .step-num { background: #ccfbf1; color: #0f766e; }
+
+  .red .module-header { background: linear-gradient(135deg, #fff1f2, #ffe4e6); }
+  .red .module-icon { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+  .red .step-num { background: #ffe4e6; color: #b91c1c; }
+
+  .indigo .module-header { background: linear-gradient(135deg, #eef2ff, #e0e7ff); }
+  .indigo .module-icon { background: linear-gradient(135deg, #6366f1, #4338ca); }
+  .indigo .step-num { background: #e0e7ff; color: #4338ca; }
+
+  .pink .module-header { background: linear-gradient(135deg, #fdf2f8, #fce7f3); }
+  .pink .module-icon { background: linear-gradient(135deg, #ec4899, #be185d); }
+  .pink .step-num { background: #fce7f3; color: #be185d; }
+
+  .yellow .module-header { background: linear-gradient(135deg, #fefce8, #fef9c3); }
+  .yellow .module-icon { background: linear-gradient(135deg, #eab308, #a16207); }
+  .yellow .step-num { background: #fef9c3; color: #a16207; }
+
+  .slate .module-header { background: linear-gradient(135deg, #f8fafc, #f1f5f9); }
+  .slate .module-icon { background: linear-gradient(135deg, #64748b, #334155); }
+  .slate .step-num { background: #f1f5f9; color: #334155; }
+</style>
+</head>
+<body>
+
+<!-- ======================== COVER ======================== -->
+<div class="cover">
+  <div class="cover-logo">🏫</div>
+  <h1>Chalo Schools Platform</h1>
+  <h2>Module-by-Module Deep Dive &amp; Development Roadmap</h2>
+  <div class="cover-divider"></div>
+  <div class="cover-meta">
+    <div class="cover-meta-item">
+      <div class="label">Total Modules</div>
+      <div class="value">15+</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="label">Platform Type</div>
+      <div class="value">School ERP + AI</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="label">Target Segment</div>
+      <div class="value">CBSE Private Schools</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="label">Document Date</div>
+      <div class="value">May 2026</div>
+    </div>
+  </div>
+  <div class="cover-subtitle">Confidential — Internal Strategy Document</div>
+</div>
+
+<!-- ======================== TOC ======================== -->
+<div class="toc">
+  <h2>Table of Contents</h2>
+  <div class="toc-grid">
+    <div class="toc-item"><span class="toc-num">01</span> Dashboard &amp; Analytics</div>
+    <div class="toc-item"><span class="toc-num">02</span> Admission Management</div>
+    <div class="toc-item"><span class="toc-num">03</span> Student Management</div>
+    <div class="toc-item"><span class="toc-num">04</span> Staff &amp; HR Management</div>
+    <div class="toc-item"><span class="toc-num">05</span> Attendance Tracking</div>
+    <div class="toc-item"><span class="toc-num">06</span> Timetable &amp; AI Scheduling</div>
+    <div class="toc-item"><span class="toc-num">07</span> Examination &amp; Report Cards</div>
+    <div class="toc-item"><span class="toc-num">08</span> Fee Management (3-Method)</div>
+    <div class="toc-item"><span class="toc-num">09</span> Communication &amp; Circulars</div>
+    <div class="toc-item"><span class="toc-num">10</span> Library Management</div>
+    <div class="toc-item"><span class="toc-num">11</span> Transport Management</div>
+    <div class="toc-item"><span class="toc-num">12</span> Payroll &amp; Salary</div>
+    <div class="toc-item"><span class="toc-num">13</span> Reports &amp; Exports</div>
+    <div class="toc-item"><span class="toc-num">14</span> AI Features (Cross-Module)</div>
+    <div class="toc-item"><span class="toc-num">15</span> Our Development Plan</div>
+  </div>
+</div>
+
+<!-- ======================== MODULES ======================== -->
+<div class="section">
+
+  <!-- MODULE 1: Dashboard -->
+  <div class="module-card blue">
+    <div class="module-header">
+      <div class="module-icon">📊</div>
+      <div class="module-title">
+        <h3>01 — Dashboard &amp; Analytics</h3>
+        <p>Real-time school health snapshot for principals and admins</p>
+      </div>
+    </div>
+    <div class="module-body">
+      <ul class="step-list">
+        <li class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h4>KPI Summary Cards</h4>
+            <p>Displays total students enrolled, active staff count, today's attendance %, and total fees collected vs outstanding. Auto-refreshed at page load.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h4>Fee Collection Progress</h4>
+            <p>Visual progress bar showing how much of the expected annual fee revenue has been collected. Color shifts red when below 60%, yellow 60-80%, green above 80%.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h4>Class-wise Attendance Bar Chart</h4>
+            <p>Horizontal bar chart (Recharts) per class section showing attendance %. Helps principal spot underperforming classes instantly.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <h4>Quick Action Shortcuts</h4>
+            <p>One-click shortcuts to most frequent tasks: Mark Attendance, Generate Challan, View Outstanding, Publish Circular.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <h4>Role-based Views</h4>
+            <p>Principal sees school-wide stats. Teacher sees only their class attendance and timetable. Parent sees their child's data only.</p>
+          </div>
+        </li>
+      </ul>
+      <div class="feature-grid">
+        <div class="feature-pill">Live KPIs</div>
+        <div class="feature-pill">Attendance Chart</div>
+        <div class="feature-pill">Fee Progress</div>
+        <div class="feature-pill ai">AI Insights (planned)</div>
+        <div class="feature-pill">Role-based View</div>
+        <div class="feature-pill">Quick Actions</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODULE 2: Admissions -->
+  <div class="module-card green">
+    <div class="module-header">
+      <div class="module-icon">📝</div>
+      <div class="module-title">
+        <h3>02 — Admission Management</h3>
+        <p>End-to-end enquiry to enrollment pipeline with funnel tracking</p>
+      </div>
+    </div>
+    <div class="module-body">
+      <ul class="step-list">
+        <li class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h4>Enquiry Registration (Public Form)</h4>
+            <p>Walk-in parents fill a form: child name, DOB, applying class, parent mobile, source (walk-in / online / referral). No login required. Stored with status = "Enquiry".</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h4>Funnel Pipeline View</h4>
+            <p>5-stage kanban-style funnel: Enquiry → Form Issued → Test Scheduled → Interview → Enrolled. Click any stage card to filter the list below.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h4>Status Advance</h4>
+            <p>Admin selects a student and advances them to next stage. Each stage change is date-stamped. Notes can be added at each step.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <h4>Conversion to Student Record</h4>
+            <p>On "Enrolled", system auto-creates a full student profile, parent record, assigns to class, and generates admission number.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <h4>Enquiry Funnel Analytics</h4>
+            <p>Summary card shows conversion rate: X enquiries → Y enrollments. Helps management measure marketing effectiveness.</p>
+          </div>
+        </li>
+      </ul>
+      <div class="feature-grid">
+        <div class="feature-pill green">Public Enquiry Form</div>
+        <div class="feature-pill green">Funnel Pipeline</div>
+        <div class="feature-pill green">Stage Tracking</div>
+        <div class="feature-pill ai">WhatsApp Follow-up (planned)</div>
+        <div class="feature-pill green">Auto Student Creation</div>
+        <div class="feature-pill green">Conversion Analytics</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODULE 3: Students -->
+  <div class="module-card purple">
+    <div class="module-header">
+      <div class="module-icon">👨‍🎓</div>
+      <div class="module-title">
+        <h3>03 — Student Management</h3>
+        <p>Complete student lifecycle from enrollment to alumni</p>
+      </div>
+    </div>
+    <div class="module-body">
+      <ul class="step-list">
+        <li class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h4>Student Profile</h4>
+            <p>Full details: name, DOB, gender, blood group, photo, admission number, class, section, house, religion, category (OBC/SC/General), Aadhaar number, TC number.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h4>Parent / Guardian Linkage</h4>
+            <p>Each student linked to father and mother record (name, mobile, email, occupation, income). Parent mobile is the login credential for parent portal.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h4>Document Management</h4>
+            <p>Upload and store: birth certificate, Aadhaar, caste certificate, previous TC, passport photo, medical records. Tagged and searchable.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <h4>Class Promotion &amp; TC Generation</h4>
+            <p>End-of-year bulk promotion: move all students to next class. TC generation: locked record, formatted PDF with school seal.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <h4>Search &amp; Filters</h4>
+            <p>Search by name, admission number, parent mobile. Filter by class, gender, category. Export to Excel for government compliance reports.</p>
+          </div>
+        </li>
+      </ul>
+      <div class="feature-grid">
+        <div class="feature-pill">Complete Profile</div>
+        <div class="feature-pill">Parent Linkage</div>
+        <div class="feature-pill">Document Upload</div>
+        <div class="feature-pill ai">TC Generation PDF</div>
+        <div class="feature-pill">Bulk Promotion</div>
+        <div class="feature-pill">Excel Export</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODULE 4: Staff -->
+  <div class="module-card orange">
+    <div class="module-header">
+      <div class="module-icon">👩‍🏫</div>
+      <div class="module-title">
+        <h3>04 — Staff &amp; HR Management</h3>
+        <p>Teaching and non-teaching staff records with attendance and leave</p>
+      </div>
+    </div>
+    <div class="module-body">
+      <ul class="step-list">
+        <li class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h4>Staff Profile &amp; Designation</h4>
+            <p>Name, designation, department, qualification, experience, joining date, contract type (permanent/contract/visiting). Subject specializations linked.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h4>Daily Attendance Marking</h4>
+            <p>Principal/admin marks staff attendance: Present / Absent / Half-day / Late. Linked to payroll — absent days auto-deducted from salary calculation.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h4>Leave Management</h4>
+            <p>Staff applies for leave (CL/EL/SL). HOD approves/rejects. Leave balance tracked per academic year. Available leave shown on staff dashboard.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <h4>Subject Assignment</h4>
+            <p>Each teacher assigned to specific subjects and classes. This feeds directly into timetable generation — AI knows which teacher can take which period.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <h4>Attendance Summary Report</h4>
+            <p>Monthly view: total working days, days present, % attendance. Flagged if below school threshold (typically 85%). Used for performance review.</p>
+          </div>
+        </li>
+      </ul>
+      <div class="feature-grid">
+        <div class="feature-pill alert">Staff Profiles</div>
+        <div class="feature-pill alert">Daily Attendance</div>
+        <div class="feature-pill alert">Leave Management</div>
+        <div class="feature-pill alert">Subject Assignment</div>
+        <div class="feature-pill ai">Payroll Integration</div>
+        <div class="feature-pill alert">Monthly Reports</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODULE 5: Attendance -->
+  <div class="module-card teal">
+    <div class="module-header">
+      <div class="module-icon">✅</div>
+      <div class="module-title">
+        <h3>05 — Attendance Tracking</h3>
+        <p>Class-wise student attendance with parent auto-notification</p>
+      </div>
+    </div>
+    <div class="module-body">
+      <ul class="step-list">
+        <li class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h4>Class Attendance Entry</h4>
+            <p>Teacher selects class → sees full student roster → marks each student: Present / Absent / Late / On Leave. Saves with timestamp and teacher ID.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h4>Auto WhatsApp Alert on Absence</h4>
+            <p>When a student is marked absent, parent receives WhatsApp message immediately: "Dear Parent, [Child Name] was marked absent on [Date]. Please contact school if this is an error."</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h4>Monthly Attendance Report</h4>
+            <p>Per student: calendar view showing P/A/L for each day. Total working days, days present, % attendance. Printed in report card if below 75%.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <h4>Low Attendance Flag</h4>
+            <p>Students below 75% attendance are auto-flagged. Principal sees this list on dashboard. System can send WhatsApp notice to parents of flagged students.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <h4>Holiday &amp; Working Day Calendar</h4>
+            <p>Admin defines school holidays, half-days, exam days. Attendance calculation automatically excludes non-working days from denominator.</p>
+          </div>
+        </li>
+      </ul>
+      <div class="feature-grid">
+        <div class="feature-pill">Bulk Mark Entry</div>
+        <div class="feature-pill ai">WhatsApp Auto-Alert</div>
+        <div class="feature-pill">Monthly Report</div>
+        <div class="feature-pill">Low-75% Flag</div>
+        <div class="feature-pill">Holiday Calendar</div>
+        <div class="feature-pill">Class Overview Grid</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODULE 6: Timetable -->
+  <div class="module-card indigo">
+    <div class="module-header">
+      <div class="module-icon">🤖</div>
+      <div class="module-title">
+        <h3>06 — Timetable &amp; AI Scheduling</h3>
+        <p>AI-powered conflict-free timetable generation + substitution management</p>
+      </div>
+    </div>
+    <div class="module-body">
+      <ul class="step-list">
+        <li class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h4>Rules Configuration</h4>
+            <p>Admin sets: number of periods per day, period duration, lunch break position, max continuous periods per subject, preferred morning/afternoon subjects.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h4>AI Auto-Generation (Claude API)</h4>
+            <p>Click "Auto-Generate" → sends class structure, teacher-subject assignments, and rules to Claude AI → gets back a complete conflict-free weekly schedule in seconds. No teacher double-booked across two classes simultaneously.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h4>Manual Override</h4>
+            <p>Drag-and-drop interface to adjust individual slots after AI generation. Conflict checker highlights in red if a proposed change creates a clash.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <h4>Substitution Management</h4>
+            <p>Teacher marks absent → system finds available teachers who can cover the period (based on subject compatibility and free periods) → admin approves substitution with one click.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <h4>Teacher &amp; Class View</h4>
+            <p>Each teacher sees their own weekly timetable. Each class sees their schedule. Mobile-friendly view for teachers checking their schedule on phone.</p>
+          </div>
+        </li>
+      </ul>
+      <div class="feature-grid">
+        <div class="feature-pill ai">Claude AI Generation</div>
+        <div class="feature-pill ai">Conflict Detection</div>
+        <div class="feature-pill ai">Substitution AI</div>
+        <div class="feature-pill">Drag-drop Edit</div>
+        <div class="feature-pill">Rules Config</div>
+        <div class="feature-pill">Teacher View</div>
+      </div>
+
+      <div class="screen-mockup">
+        <div class="screen-bar">
+          <div class="screen-dot dot-r"></div>
+          <div class="screen-dot dot-y"></div>
+          <div class="screen-dot dot-g"></div>
+        </div>
+        <div class="screen-content">
+          <div class="screen-row">
+            <span class="screen-label">POST /timetable/generate</span>
+            <span class="screen-tag tag-blue">AI Request</span>
+          </div>
+          <div class="screen-row">
+            <span class="screen-label">Model</span>
+            <span class="screen-val">claude-sonnet-4-6</span>
+          </div>
+          <div class="screen-row">
+            <span class="screen-label">Input</span>
+            <span class="screen-val">12 teachers, 8 classes, rules config</span>
+          </div>
+          <div class="screen-row">
+            <span class="screen-label">Output</span>
+            <span class="screen-val">40-slot/week conflict-free schedule</span>
+          </div>
+          <div class="screen-row">
+            <span class="screen-label">Status</span>
+            <span class="screen-tag tag-green">BUILT ✓</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODULE 7: Examinations -->
+  <div class="module-card red">
+    <div class="module-header">
+      <div class="module-icon">📋</div>
+      <div class="module-title">
+        <h3>07 — Examination &amp; Report Cards</h3>
+        <p>CBSE-aligned marks entry, AI remarks, and automated report card generation</p>
+      </div>
+    </div>
+    <div class="module-body">
+      <ul class="step-list">
+        <li class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h4>Exam Schedule Setup</h4>
+            <p>Admin creates exam (FA1, SA1, FA2, SA2 for CBSE). Sets: exam name, class, subject, date, max marks, passing marks. Visible to teachers on their portal.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h4>Marks Entry by Teacher</h4>
+            <p>Teacher opens exam → sees student list for their class/subject → enters marks per student. Validates: mark can't exceed max marks. Shows pass/fail instantly.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h4>AI Remark Generation (Claude API)</h4>
+            <p>Teacher types rough remark: "student is good but needs improvement in math." AI rephrases to professional CBSE language: "Demonstrates consistent effort. Would benefit from focused practice in mathematical problem-solving." 50 remarks in seconds.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <h4>CBSE Grade Calculation</h4>
+            <p>Auto-calculates grade from percentage: A1 (91-100%), A2 (81-90%), B1 (71-80%), B2 (61-70%), C1 (51-60%), C2 (41-50%), D (33-40%), E (below 33%).</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <h4>Report Card PDF Generation</h4>
+            <p>Published report cards generate PDF with: school letterhead, student photo, all subjects with marks/grade/remarks, attendance summary, class teacher signature, principal remarks. Secure download link sent to parent.</p>
+          </div>
+        </li>
+      </ul>
+      <div class="feature-grid">
+        <div class="feature-pill">Exam Scheduling</div>
+        <div class="feature-pill">Marks Entry</div>
+        <div class="feature-pill ai">AI Remark Writing</div>
+        <div class="feature-pill">CBSE Grade Auto-calc</div>
+        <div class="feature-pill">Report Card PDF</div>
+        <div class="feature-pill ai">Parent Download Link</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODULE 8: Fees -->
+  <div class="module-card yellow">
+    <div class="module-header">
+      <div class="module-icon">💰</div>
+      <div class="module-title">
+        <h3>08 — Fee Management (3-Method System)</h3>
+        <p>Bank challan + counter collection + online payment with AI reconciliation</p>
+      </div>
+    </div>
+    <div class="module-body">
+      <ul class="step-list">
+        <li class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h4>Fee Structure Setup</h4>
+            <p>Admin defines fee heads (Tuition, Bus, Lab, Activity, Exam) and amounts per class. Applies to all students in that class/section. Concessions defined separately (e.g., Staff Ward: 50% on tuition).</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h4>Method 1: Bank Challan</h4>
+            <p>Parent pays at bank branch using challan. Admin uploads bank statement CSV. AI reconciliation auto-matches transactions to outstanding challans using amount + date proximity matching.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h4>Method 2: Counter Cash Collection</h4>
+            <p>Accountant receives cash at school counter → selects student → marks which fee heads are being paid → prints receipt with receipt number, amount, heads paid, date, collector name.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <h4>Method 3: Online Payment (Razorpay)</h4>
+            <p>Parent sees outstanding fees on their portal → clicks Pay Online → Razorpay payment gateway → on success, transaction recorded + WhatsApp receipt sent.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <h4>Outstanding Report &amp; Reminders</h4>
+            <p>Admin sees full outstanding list with days overdue. Auto WhatsApp reminder sent to parents of overdue students. EOD collection report: total collected by method, by fee head, by class.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">6</div>
+          <div class="step-content">
+            <h4>AI Duplicate Payment Detection</h4>
+            <p>AI flags cases where same amount paid twice within 7 days for same student. Alert shown to accountant for verification before crediting.</p>
+          </div>
+        </li>
+      </ul>
+      <div class="feature-grid">
+        <div class="feature-pill">Fee Structure</div>
+        <div class="feature-pill">Bank Challan</div>
+        <div class="feature-pill">Counter Receipt</div>
+        <div class="feature-pill">Razorpay Online</div>
+        <div class="feature-pill ai">AI Reconciliation</div>
+        <div class="feature-pill ai">Duplicate Detection</div>
+        <div class="feature-pill">Concession Mgmt</div>
+        <div class="feature-pill">EOD Report</div>
+        <div class="feature-pill alert">WhatsApp Reminder</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODULE 9: Communication -->
+  <div class="module-card pink">
+    <div class="module-header">
+      <div class="module-icon">📢</div>
+      <div class="module-title">
+        <h3>09 — Communication &amp; Circulars</h3>
+        <p>AI-assisted announcements with multi-channel delivery</p>
+      </div>
+    </div>
+    <div class="module-body">
+      <ul class="step-list">
+        <li class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h4>Circular Creation with AI Assist</h4>
+            <p>Admin types rough note: "tell parents school closed tomorrow for local election." AI rewrites in formal school letter format with proper salutation, body, and closing. Admin reviews and publishes.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h4>Targeted Audience Selection</h4>
+            <p>Circular can be sent to: All Parents, specific Class (e.g., only Grade 10 parents), specific section, only staff, or everyone. Multi-select supported.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h4>WhatsApp &amp; In-app Delivery</h4>
+            <p>Published circulars delivered via WhatsApp Business API to all target parents simultaneously. Also visible in parent app under "Notices". Read receipts tracked.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <h4>Notice Board Archive</h4>
+            <p>All past circulars stored chronologically. Parents can scroll history. Admin can search by date or keyword. Pinned announcements shown at top.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <h4>Event Calendar</h4>
+            <p>School events (PTM, Annual Day, Exam dates, Holidays) published to shared calendar visible to all parents and staff in their portal.</p>
+          </div>
+        </li>
+      </ul>
+      <div class="feature-grid">
+        <div class="feature-pill ai">AI Circular Writing</div>
+        <div class="feature-pill">Targeted Groups</div>
+        <div class="feature-pill ai">WhatsApp Delivery</div>
+        <div class="feature-pill">Archive Search</div>
+        <div class="feature-pill">Event Calendar</div>
+        <div class="feature-pill">Read Receipts</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODULE 10: Library -->
+  <div class="module-card slate">
+    <div class="module-header">
+      <div class="module-icon">📚</div>
+      <div class="module-title">
+        <h3>10 — Library Management</h3>
+        <p>Book catalog, issue/return tracking with fine calculation</p>
+      </div>
+    </div>
+    <div class="module-body">
+      <ul class="step-list">
+        <li class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h4>Book Catalog</h4>
+            <p>Add books: title, author, ISBN, publisher, edition, total copies, available copies. Searchable by title, author, or ISBN. Category tags (Fiction, Science, Reference).</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h4>Issue &amp; Return</h4>
+            <p>Scan/select student → select book → issue for 14 days. Return: system calculates fine at ₹2/day if overdue. Available stock locked atomically (no double-issue of last copy).</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h4>Overdue Tracking</h4>
+            <p>Dashboard shows all overdue books with student name, book, days overdue, fine amount. WhatsApp reminder sent to parent of student with overdue book.</p>
+          </div>
+        </li>
+      </ul>
+      <div class="feature-grid">
+        <div class="feature-pill">Book Catalog</div>
+        <div class="feature-pill">Issue / Return</div>
+        <div class="feature-pill">Fine Calculation</div>
+        <div class="feature-pill alert">Overdue Alerts</div>
+        <div class="feature-pill">Stock Management</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODULE 11: Transport -->
+  <div class="module-card blue">
+    <div class="module-header">
+      <div class="module-icon">🚌</div>
+      <div class="module-title">
+        <h3>11 — Transport Management</h3>
+        <p>Route planning, vehicle assignment, and student transport tracking</p>
+      </div>
+    </div>
+    <div class="module-body">
+      <ul class="step-list">
+        <li class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h4>Route &amp; Stop Setup</h4>
+            <p>Admin defines routes (e.g., "Route A - East Side") with ordered stops: Stop 1, Stop 2... each with GPS coordinates and pickup time.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h4>Vehicle &amp; Driver Management</h4>
+            <p>Bus details: registration number, capacity, driver name/mobile, conductor name. Vehicle assigned to route. Driver's license expiry tracked with alert.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h4>Student Transport Assignment</h4>
+            <p>Student assigned to route + stop. Transport fee automatically added to their fee structure. Parent notified via WhatsApp with pickup time and stop details.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <h4>Live Tracking (planned)</h4>
+            <p>Bus driver app shares GPS location. Parent app shows bus on map with ETA to their stop. Alert when bus is 5 minutes away.</p>
+          </div>
+        </li>
+      </ul>
+      <div class="feature-grid">
+        <div class="feature-pill">Routes &amp; Stops</div>
+        <div class="feature-pill">Vehicle Mgmt</div>
+        <div class="feature-pill">Student Assignment</div>
+        <div class="feature-pill ai">GPS Tracking (planned)</div>
+        <div class="feature-pill alert">Parent ETA Alert</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODULE 12: Payroll -->
+  <div class="module-card green">
+    <div class="module-header">
+      <div class="module-icon">💵</div>
+      <div class="module-title">
+        <h3>12 — Payroll &amp; Salary</h3>
+        <p>Monthly salary processing with attendance-linked deductions</p>
+      </div>
+    </div>
+    <div class="module-body">
+      <ul class="step-list">
+        <li class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h4>Salary Structure Definition</h4>
+            <p>Per staff member: Basic, HRA, TA, DA, Special Allowance (earnings). PF, Professional Tax, LOP (deductions). Gross = sum of earnings. Net = Gross - deductions.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h4>Monthly Payroll Run</h4>
+            <p>Admin triggers payroll for month → system reads attendance for all staff → calculates LOP deduction for absent days → generates payslip for every active staff member.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h4>Payslip PDF &amp; Distribution</h4>
+            <p>Payslip PDF with school logo, staff details, earnings/deductions breakdown, net pay. Emailed to staff or available in staff portal. WhatsApp notification with download link.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <h4>PF &amp; TDS Register</h4>
+            <p>Aggregated monthly register for PF contributions and TDS deductions. Exportable for CA/auditor. Annual Form 16 generation (planned).</p>
+          </div>
+        </li>
+      </ul>
+      <div class="feature-grid">
+        <div class="feature-pill green">Salary Structure</div>
+        <div class="feature-pill green">Monthly Run</div>
+        <div class="feature-pill green">Attendance-linked LOP</div>
+        <div class="feature-pill ai">Payslip PDF</div>
+        <div class="feature-pill">PF Register</div>
+        <div class="feature-pill ai">Form 16 (planned)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODULE 13: Reports -->
+  <div class="module-card purple">
+    <div class="module-header">
+      <div class="module-icon">📈</div>
+      <div class="module-title">
+        <h3>13 — Reports &amp; Exports</h3>
+        <p>On-demand and scheduled reports for management and compliance</p>
+      </div>
+    </div>
+    <div class="module-body">
+      <ul class="step-list">
+        <li class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h4>Fee Outstanding Report</h4>
+            <p>Filterable by class, term, fee head. Shows student name, total due, paid, outstanding, days overdue. Exportable to Excel/PDF. Used for parent meeting preparation.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h4>Attendance Monthly Register</h4>
+            <p>CBSE format: student names as rows, dates as columns, P/A/L in cells. Auto-calculates % at end. Downloadable as PDF. Required for government inspections.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h4>EOD Cash Collection Report</h4>
+            <p>End-of-day summary: total cash received at counter, split by fee head, collector-wise, class-wise. Matches accountant's cash drawer for daily reconciliation.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <h4>Marksheet &amp; Consolidated Report</h4>
+            <p>Subject-wise marks for all students in a class for an exam. Rank calculation. Class topper highlighted. Failure list extracted separately.</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <h4>Automated Scheduled Reports</h4>
+            <p>Cron jobs: Daily stats at 18:30 (emailed to principal), Weekly fee reminders Monday 08:00 (WhatsApp to parents), Monthly attendance flag report.</p>
+          </div>
+        </li>
+      </ul>
+      <div class="feature-grid">
+        <div class="feature-pill">Fee Outstanding</div>
+        <div class="feature-pill">Attendance Register</div>
+        <div class="feature-pill">EOD Collection</div>
+        <div class="feature-pill">Marksheet PDF</div>
+        <div class="feature-pill ai">Scheduled Reports</div>
+        <div class="feature-pill">Excel / PDF Export</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODULE 14: AI Features -->
+  <div class="module-card indigo">
+    <div class="module-header">
+      <div class="module-icon">🧠</div>
+      <div class="module-title">
+        <h3>14 — AI Features (Cross-Module)</h3>
+        <p>Chalo's differentiator — AI woven into 5 key workflows</p>
+      </div>
+    </div>
+    <div class="module-body">
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>AI Feature</th>
+            <th>Where It Works</th>
+            <th>What AI Does</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Timetable Generation</strong></td>
+            <td>Timetable Module</td>
+            <td>Creates full weekly schedule with zero conflicts from teacher-subject-class data</td>
+            <td><span class="badge badge-live">Built ✓</span></td>
+          </tr>
+          <tr>
+            <td><strong>Substitution Finder</strong></td>
+            <td>Timetable Module</td>
+            <td>Finds best available teacher to cover absent teacher's periods</td>
+            <td><span class="badge badge-live">Built ✓</span></td>
+          </tr>
+          <tr>
+            <td><strong>Remark Rephraser</strong></td>
+            <td>Examinations Module</td>
+            <td>Converts rough teacher notes into professional CBSE-style remarks</td>
+            <td><span class="badge badge-live">Built ✓</span></td>
+          </tr>
+          <tr>
+            <td><strong>Fee Reconciliation</strong></td>
+            <td>Fee Module</td>
+            <td>Matches bank statement transactions to outstanding challans automatically</td>
+            <td><span class="badge badge-live">Built ✓</span></td>
+          </tr>
+          <tr>
+            <td><strong>Circular Writing Assistant</strong></td>
+            <td>Communication Module</td>
+            <td>Converts admin's rough draft into formal school communication</td>
+            <td><span class="badge badge-live">Built ✓</span></td>
+          </tr>
+          <tr>
+            <td><strong>RAG Chat Assistant</strong></td>
+            <td>All Modules (sidebar)</td>
+            <td>Answers queries about policies, circulars, fee structure from school's own documents</td>
+            <td><span class="badge badge-planned">In Progress</span></td>
+          </tr>
+          <tr>
+            <td><strong>Admission Scoring</strong></td>
+            <td>Admissions Module</td>
+            <td>Scores enquiry leads by likelihood to convert based on historical patterns</td>
+            <td><span class="badge badge-planned">Planned</span></td>
+          </tr>
+          <tr>
+            <td><strong>Fee Default Predictor</strong></td>
+            <td>Fee Module</td>
+            <td>Predicts which students are at risk of defaulting based on payment history</td>
+            <td><span class="badge badge-planned">Planned</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ======================== DEV PLAN ======================== -->
+<div class="section">
+  <div style="background: linear-gradient(135deg, #1e293b, #0f2027); border-radius: 20px; padding: 40px; margin-bottom: 30px; color: white;">
+    <h2 style="font-size: 32px; font-weight: 900; margin-bottom: 8px;">15 — Our Development Plan</h2>
+    <p style="opacity: 0.6; font-size: 15px;">Based on Chalo's model — what we've built, what we're enhancing, and what we're adding that Chalo doesn't have</p>
+  </div>
+
+  <!-- Gap Analysis -->
+  <div class="module-card blue" style="margin-bottom: 30px;">
+    <div class="module-header">
+      <div class="module-icon">🗺️</div>
+      <div class="module-title">
+        <h3>Current State — What We've Already Built</h3>
+        <p>Modules completed and ready for demo</p>
+      </div>
+    </div>
+    <div class="module-body">
+      <div class="gap-card gap-built">
+        <div class="gap-icon">✅</div>
+        <div class="gap-content">
+          <h4>Core Backend — 15 API Route Modules</h4>
+          <p>Express.js REST API with auth, students, staff, attendance, timetable (with AI), examinations (with AI remarks), fees (3-method), communications (with AI circular), library, transport, payroll, reports, analytics, admissions, schools endpoints. All live.</p>
+        </div>
+      </div>
+      <div class="gap-card gap-built">
+        <div class="gap-icon">✅</div>
+        <div class="gap-content">
+          <h4>PostgreSQL Database — 4 Migration Files</h4>
+          <p>32 tables across 4 migration files: core schema (users, schools, staff), academic (timetable, exams, marks, report cards), finance (challans, transactions, reconciliation), communication (circulars, library, transport, payroll).</p>
+        </div>
+      </div>
+      <div class="gap-card gap-built">
+        <div class="gap-icon">✅</div>
+        <div class="gap-content">
+          <h4>React Frontend — 10 Pages</h4>
+          <p>Dashboard, Students, Staff, Attendance, Timetable, Examinations, Fees, Admissions, Reports, Communications. Role-based routing, Zustand state management, Tailwind CSS design.</p>
+        </div>
+      </div>
+      <div class="gap-card gap-built">
+        <div class="gap-icon">✅</div>
+        <div class="gap-content">
+          <h4>AI Integration — 5 Features Live</h4>
+          <p>Timetable generation, substitution finder, teacher remark rephraser, bank statement reconciliation, circular writing assistant. All using Claude Sonnet API.</p>
+        </div>
+      </div>
+      <div class="gap-card gap-built">
+        <div class="gap-icon">✅</div>
+        <div class="gap-content">
+          <h4>Auth System — JWT + OTP</h4>
+          <p>Admin login (username/password), Phone OTP login (Supabase), JWT refresh tokens, Redis blacklist for logout, role-based access control (6 roles).</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase roadmap -->
+  <div class="dev-plan">
+    <div class="section-header">
+      <h2>Phase 1 — Immediate Priorities (Next 4 Weeks)</h2>
+      <p>Critical items needed before first school pilot</p>
+    </div>
+    <div class="phase-header" style="background: #eff6ff;">
+      <div class="phase-num" style="background: #dbeafe; color: #1d4ed8;">P1</div>
+      <div class="phase-info">
+        <h3>Stability + Parent Portal</h3>
+        <p>Make existing features production-ready and add parent-facing access</p>
+      </div>
+    </div>
+    <div class="phase-body">
+      <div class="phase-tasks">
+        <div class="phase-task"><span class="check">→</span> Fix ChatWidget component (currently missing file)</div>
+        <div class="phase-task"><span class="check">→</span> Parent mobile login via OTP → child view only</div>
+        <div class="phase-task"><span class="check">→</span> Parent portal: fee outstanding + payment history</div>
+        <div class="phase-task"><span class="check">→</span> Parent portal: attendance view for their child</div>
+        <div class="phase-task"><span class="check">→</span> Parent portal: circular/notice board</div>
+        <div class="phase-task"><span class="check">→</span> Report card PDF download by parent</div>
+        <div class="phase-task"><span class="check">→</span> Razorpay live payment gateway integration</div>
+        <div class="phase-task"><span class="check">→</span> WhatsApp Business API integration (360Dialog/WATI)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dev-plan">
+    <div class="section-header" style="background: linear-gradient(135deg, #7c3aed, #a855f7);">
+      <h2>Phase 2 — AI Enhancement (Weeks 5–8)</h2>
+      <p>Deepen AI features to create stronger competitive differentiation</p>
+    </div>
+    <div class="phase-header" style="background: #fdf4ff;">
+      <div class="phase-num" style="background: #ede9fe; color: #7c3aed;">P2</div>
+      <div class="phase-info">
+        <h3>RAG Chatbot + Predictive AI</h3>
+        <p>Make the AI assistant aware of school's own data</p>
+      </div>
+    </div>
+    <div class="phase-body">
+      <div class="phase-tasks">
+        <div class="phase-task"><span class="star">★</span> RAG chat: index school circulars, policies, fee structure</div>
+        <div class="phase-task"><span class="star">★</span> RAG chat: parent asks "what is the fee for Grade 5?" → AI answers from school data</div>
+        <div class="phase-task"><span class="star">★</span> Fee default prediction: flag students at risk</div>
+        <div class="phase-task"><span class="star">★</span> Admission lead scoring: rank enquiries by conversion probability</div>
+        <div class="phase-task"><span class="star">★</span> AI-generated daily summary email to principal</div>
+        <div class="phase-task"><span class="star">★</span> Smart attendance anomaly detection</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dev-plan">
+    <div class="section-header" style="background: linear-gradient(135deg, #15803d, #22c55e);">
+      <h2>Phase 3 — Features Chalo Doesn't Have (Weeks 9–14)</h2>
+      <p>Our unique differentiators to win against Chalo in head-to-head deals</p>
+    </div>
+    <div class="phase-header" style="background: #f0fdf4;">
+      <div class="phase-num" style="background: #dcfce7; color: #15803d;">P3</div>
+      <div class="phase-info">
+        <h3>Competitive Differentiators</h3>
+        <p>Things none of the top competitors do well</p>
+      </div>
+    </div>
+    <div class="phase-body">
+      <div class="phase-tasks">
+        <div class="phase-task"><span class="plus">+</span> Basic LMS: upload study materials, assignments</div>
+        <div class="phase-task"><span class="plus">+</span> Online homework submission by students</div>
+        <div class="phase-task"><span class="plus">+</span> Live GPS bus tracking (driver app)</div>
+        <div class="phase-task"><span class="plus">+</span> Parent-teacher direct messaging (in-app)</div>
+        <div class="phase-task"><span class="plus">+</span> Multi-language support (Tamil, Hindi, Telugu)</div>
+        <div class="phase-task"><span class="plus">+</span> Offline-capable mobile app (Progressive Web App)</div>
+        <div class="phase-task"><span class="plus">+</span> IGCSE and State Board report card formats</div>
+        <div class="phase-task"><span class="plus">+</span> Biometric integration for staff attendance</div>
+        <div class="phase-task"><span class="plus">+</span> School store / canteen management</div>
+        <div class="phase-task"><span class="plus">+</span> Alumni management &amp; donation portal</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary comparison table -->
+  <div class="module-card slate">
+    <div class="module-header">
+      <div class="module-icon">⚖️</div>
+      <div class="module-title">
+        <h3>Us vs Chalo — Feature Positioning</h3>
+        <p>Where we match, where we go further</p>
+      </div>
+    </div>
+    <div class="module-body">
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Feature Area</th>
+            <th>Chalo</th>
+            <th>Our Platform</th>
+            <th>Our Advantage</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>AI Timetable</strong></td>
+            <td>✅ Yes</td>
+            <td>✅ Built</td>
+            <td><span class="badge badge-live">Matched</span></td>
+          </tr>
+          <tr>
+            <td><strong>AI Remark Writer</strong></td>
+            <td>✅ Yes</td>
+            <td>✅ Built</td>
+            <td><span class="badge badge-live">Matched</span></td>
+          </tr>
+          <tr>
+            <td><strong>3-Method Fee Collection</strong></td>
+            <td>✅ Yes</td>
+            <td>✅ Built</td>
+            <td><span class="badge badge-live">Matched</span></td>
+          </tr>
+          <tr>
+            <td><strong>CBSE Report Cards</strong></td>
+            <td>✅ Yes</td>
+            <td>✅ Built</td>
+            <td><span class="badge badge-live">Matched</span></td>
+          </tr>
+          <tr>
+            <td><strong>WhatsApp Communication</strong></td>
+            <td>✅ Yes</td>
+            <td>🔄 Phase 1</td>
+            <td><span class="badge badge-planned">In Progress</span></td>
+          </tr>
+          <tr>
+            <td><strong>Parent Portal</strong></td>
+            <td>✅ Yes</td>
+            <td>🔄 Phase 1</td>
+            <td><span class="badge badge-planned">In Progress</span></td>
+          </tr>
+          <tr>
+            <td><strong>RAG Chat Assistant</strong></td>
+            <td>✅ Yes</td>
+            <td>🔄 Phase 2</td>
+            <td><span class="badge badge-ai">Enhanced</span></td>
+          </tr>
+          <tr>
+            <td><strong>Fee Default Predictor</strong></td>
+            <td>❌ No</td>
+            <td>✨ Phase 2</td>
+            <td><span class="badge badge-ai">Our Unique Feature</span></td>
+          </tr>
+          <tr>
+            <td><strong>LMS / Study Materials</strong></td>
+            <td>❌ No</td>
+            <td>✨ Phase 3</td>
+            <td><span class="badge badge-ai">Our Unique Feature</span></td>
+          </tr>
+          <tr>
+            <td><strong>Live GPS Tracking</strong></td>
+            <td>❌ No</td>
+            <td>✨ Phase 3</td>
+            <td><span class="badge badge-ai">Our Unique Feature</span></td>
+          </tr>
+          <tr>
+            <td><strong>Multi-language UI</strong></td>
+            <td>❌ No</td>
+            <td>✨ Phase 3</td>
+            <td><span class="badge badge-ai">Our Unique Feature</span></td>
+          </tr>
+          <tr>
+            <td><strong>Offline PWA</strong></td>
+            <td>❌ No</td>
+            <td>✨ Phase 3</td>
+            <td><span class="badge badge-ai">Our Unique Feature</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <p>School Management Platform — Internal Strategy Document — May 2026</p>
+  <p style="margin-top: 6px;">Confidential. Do not distribute.</p>
+</div>
+
+</body>
+</html>

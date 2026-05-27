@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>School Platform — Full Module Status & Improvement Plan</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f4f8;color:#1a202c;font-size:14px}
+.cover{background:linear-gradient(135deg,#0f2027,#203a43,#1a56db);color:#fff;padding:80px 60px;text-align:center}
+.cover h1{font-size:44px;font-weight:900;letter-spacing:-1px}
+.cover p{font-size:18px;opacity:.65;margin-top:10px}
+.cover-chips{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:36px}
+.chip{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:8px 20px;font-size:13px;font-weight:600}
+.wrap{max-width:1100px;margin:0 auto;padding:40px 24px}
+/* MODULE CARD */
+.mcard{background:#fff;border-radius:20px;margin-bottom:40px;box-shadow:0 2px 20px rgba(0,0,0,.06);overflow:hidden}
+.mhead{display:flex;align-items:center;gap:18px;padding:28px 32px}
+.micon{width:54px;height:54px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0}
+.mtitle h2{font-size:20px;font-weight:800}
+.mtitle p{font-size:13px;color:#64748b;margin-top:2px}
+.mbody{padding:0 32px 32px}
+/* 4-COLUMN GRID */
+.quad{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:16px}
+@media(min-width:900px){.quad{grid-template-columns:repeat(4,1fr)}}
+.qbox{border-radius:12px;padding:18px}
+.qbox h4{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}
+.qbox ul{list-style:none;padding:0}
+.qbox ul li{font-size:12.5px;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.05);line-height:1.4}
+.qbox ul li:last-child{border:none}
+.qbox ul li::before{content:'• ';opacity:.4}
+/* box colors */
+.bdev{background:#eff6ff;border:1px solid #bfdbfe}.bdev h4{color:#1d4ed8}
+.bui{background:#f0fdf4;border:1px solid #bbf7d0}.bui h4{color:#15803d}
+.bfix{background:#fefce8;border:1px solid #fde68a}.bfix h4{color:#a16207}
+.badd{background:#fdf4ff;border:1px solid #e9d5ff}.badd h4{color:#7c3aed}
+/* STATUS ROW */
+.srow{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 6px}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.b-done{background:#dcfce7;color:#15803d}
+.b-partial{background:#fef9c3;color:#a16207}
+.b-missing{background:#fee2e2;color:#dc2626}
+.b-ai{background:#ede9fe;color:#7c3aed}
+.b-planned{background:#e0f2fe;color:#0369a1}
+/* SECTION DIVIDER */
+.sdiv{background:linear-gradient(90deg,#1a56db,#7c3aed);height:3px;border-radius:3px;margin:10px 0 16px}
+/* IMPROVEMENT TABLE */
+.itbl{width:100%;border-collapse:collapse;margin-top:12px}
+.itbl th{background:#f8fafc;padding:9px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:2px solid #e2e8f0}
+.itbl td{padding:10px 14px;font-size:13px;border-bottom:1px solid #f1f5f9;vertical-align:top}
+.itbl tr:last-child td{border:none}
+.itbl tr:hover td{background:#fafbff}
+/* HEADER BANNERS */
+.hbanner{padding:12px 32px;font-size:13px;font-weight:700;color:#fff;display:flex;align-items:center;gap:10px}
+/* MISSING PAGE ALERT */
+.alert-box{background:#fff1f2;border:1px solid #fecdd3;border-radius:10px;padding:14px 18px;margin:12px 0;font-size:13px;color:#9f1239}
+.alert-box strong{display:block;margin-bottom:4px;font-size:14px}
+/* API TABLE */
+.api-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:12.5px}
+.api-row:last-child{border:none}
+.method{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:800;font-family:monospace;flex-shrink:0}
+.m-get{background:#dbeafe;color:#1d4ed8}
+.m-post{background:#dcfce7;color:#15803d}
+.m-put{background:#fef3c7;color:#b45309}
+.m-patch{background:#ede9fe;color:#7c3aed}
+.m-delete{background:#fee2e2;color:#dc2626}
+.api-path{font-family:monospace;color:#374151;flex:1}
+.api-desc{color:#64748b}
+/* SCREEN PREVIEW */
+.preview{background:#1e293b;border-radius:12px;padding:16px;margin:14px 0}
+.pbar{display:flex;gap:5px;margin-bottom:12px}
+.pd{width:9px;height:9px;border-radius:50%}
+.preview-inner{background:#0f172a;border-radius:8px;padding:14px;font-family:monospace;font-size:11px;color:#94a3b8;line-height:1.7}
+.preview-inner .hl{color:#7dd3fc}
+.preview-inner .ok{color:#86efac}
+.preview-inner .warn{color:#fcd34d}
+/* FOOTER */
+footer{background:#1e293b;color:#94a3b8;text-align:center;padding:32px;font-size:12px;margin-top:60px}
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <h1>School Platform — Module Status & Improvement Report</h1>
+  <p>Every module: what's built, current UI, what to fix, what to add</p>
+  <div class="cover-chips">
+    <div class="chip">10 Modules in App.jsx</div>
+    <div class="chip">4 Backend-only Modules</div>
+    <div class="chip">15 API Route Files</div>
+    <div class="chip">32 DB Tables</div>
+    <div class="chip">5 AI Features Live</div>
+    <div class="chip">May 2026</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<!-- ========== HOW TO READ ========== -->
+<div style="background:#fff;border-radius:16px;padding:24px 28px;margin-bottom:32px;box-shadow:0 2px 16px rgba(0,0,0,.05)">
+  <h3 style="font-size:16px;font-weight:800;margin-bottom:12px">How to Read This Document</h3>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+    <div class="qbox bdev"><h4>Development Built</h4><p style="font-size:12px">Backend routes, DB tables, business logic already implemented</p></div>
+    <div class="qbox bui"><h4>Current UI</h4><p style="font-size:12px">Exactly what each page shows right now based on source code</p></div>
+    <div class="qbox bfix"><h4>UI Improvements</h4><p style="font-size:12px">What to change, fix or enhance on the frontend screen</p></div>
+    <div class="qbox badd"><h4>New Features to Add</h4><p style="font-size:12px">Missing functionality to build in both backend and frontend</p></div>
+  </div>
+</div>
+
+<!-- ========== MODULE 1: LOGIN ========== -->
+<div class="mcard">
+  <div class="mhead" style="background:linear-gradient(135deg,#eff6ff,#dbeafe)">
+    <div class="micon" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8)">🔐</div>
+    <div class="mtitle"><h2>01 — Login & Authentication</h2><p>JWT admin login + Phone OTP for parents and staff</p></div>
+  </div>
+  <div class="hbanner" style="background:#1d4ed8">Current Status</div>
+  <div class="mbody">
+    <div class="srow">
+      <span class="badge b-done">Admin Username/Password Login ✓</span>
+      <span class="badge b-done">Phone OTP via Supabase ✓</span>
+      <span class="badge b-done">JWT Access + Refresh Tokens ✓</span>
+      <span class="badge b-done">Redis Blacklist on Logout ✓</span>
+      <span class="badge b-done">6-Role RBAC ✓</span>
+      <span class="badge b-missing">Social Login ✗</span>
+      <span class="badge b-missing">Forgot Password ✗</span>
+    </div>
+    <div class="quad">
+      <div class="qbox bdev">
+        <h4>Backend Built</h4>
+        <ul>
+          <li>POST /auth/login/admin — bcrypt verify</li>
+          <li>POST /auth/otp/request — Supabase OTP</li>
+          <li>POST /auth/otp/verify — validates + issues JWT</li>
+          <li>POST /auth/refresh — refresh token rotation</li>
+          <li>POST /auth/logout — Redis blacklist</li>
+          <li>Roles: super_admin, school_admin, principal, teacher, parent, student</li>
+        </ul>
+      </div>
+      <div class="qbox bui">
+        <h4>Current UI (actual code)</h4>
+        <ul>
+          <li>White card on dark blue background</li>
+          <li>2-tab toggle: "Admin Login" / "Phone OTP"</li>
+          <li>Admin: username + password fields</li>
+          <li>OTP: phone field → OTP field (after send)</li>
+          <li>Single "Sign In" / "Send OTP" button</li>
+          <li>No logo, no school name branding</li>
+          <li>No loading spinner — button text changes to "..."</li>
+        </ul>
+      </div>
+      <div class="qbox bfix">
+        <h4>UI Improvements Needed</h4>
+        <ul>
+          <li>Add school logo + school name on login card</li>
+          <li>Add "Forgot Password" link for admin</li>
+          <li>Show role selector on OTP login (parent / teacher / student)</li>
+          <li>Add proper loading spinner, not just "..."</li>
+          <li>Add "Remember me" checkbox for admin login</li>
+          <li>Show password toggle (eye icon)</li>
+          <li>Error message below field — not just toast</li>
+          <li>Responsive mobile layout</li>
+        </ul>
+      </div>
+      <div class="qbox badd">
+        <h4>New Features to Add</h4>
+        <ul>
+          <li>Password reset via email / SMS</li>
+          <li>First-time login force password change</li>
+          <li>Session timeout warning modal</li>
+          <li>Multi-school selector after login (for super_admin)</li>
+          <li>Login activity log (IP, device, time)</li>
+          <li>Two-factor auth option for principals</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODULE 2: DASHBOARD ========== -->
+<div class="mcard">
+  <div class="mhead" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7)">
+    <div class="micon" style="background:linear-gradient(135deg,#22c55e,#15803d)">📊</div>
+    <div class="mtitle"><h2>02 — Dashboard & Analytics</h2><p>Live school health snapshot with stats and charts</p></div>
+  </div>
+  <div class="hbanner" style="background:#15803d">Current Status</div>
+  <div class="mbody">
+    <div class="srow">
+      <span class="badge b-done">4 KPI Stat Cards ✓</span>
+      <span class="badge b-done">Fee Progress Bar ✓</span>
+      <span class="badge b-done">Class Attendance Bar Chart (Recharts) ✓</span>
+      <span class="badge b-done">Color-coded attendance (green/blue/amber) ✓</span>
+      <span class="badge b-missing">Quick Actions ✗</span>
+      <span class="badge b-missing">Recent Activity Feed ✗</span>
+      <span class="badge b-missing">Notifications Panel ✗</span>
+      <span class="badge b-missing">Role-based View ✗</span>
+    </div>
+    <div class="quad">
+      <div class="qbox bdev">
+        <h4>Backend Built</h4>
+        <ul>
+          <li>GET /analytics/dashboard</li>
+          <li>Returns: students.total, students.new_this_term</li>
+          <li>fees.collected, fees.outstanding, fees.collection_pct</li>
+          <li>staff.present, staff.total, staff.attendance_pct</li>
+          <li>class_attendance[] — array with class_name, pct, present, total_students</li>
+          <li>Single parallel Promise.all query</li>
+          <li>Cron: daily stats at 18:30 emailed to principal</li>
+        </ul>
+      </div>
+      <div class="qbox bui">
+        <h4>Current UI (actual code)</h4>
+        <ul>
+          <li>Heading: "Live Dashboard — [as_of date]"</li>
+          <li>Grid: 2 cols on mobile, 4 on desktop</li>
+          <li>Card 1: Total Students (blue)</li>
+          <li>Card 2: Fees Collected in Lakhs (green)</li>
+          <li>Card 3: Outstanding in Lakhs (amber)</li>
+          <li>Card 4: Staff Present X/Y today (purple)</li>
+          <li>Fee progress bar (green fill, shows %)</li>
+          <li>Horizontal bar chart per class (color by threshold)</li>
+          <li>Loading: "Loading dashboard..." text</li>
+        </ul>
+      </div>
+      <div class="qbox bfix">
+        <h4>UI Improvements Needed</h4>
+        <ul>
+          <li>Add trend arrow on stat cards (↑ vs last week)</li>
+          <li>Fee bar color: red if &lt;60%, yellow 60–80%, green &gt;80%</li>
+          <li>Add "as of [time]" + refresh button</li>
+          <li>Skeleton loader instead of plain text loading</li>
+          <li>Add "View Details" link on each card</li>
+          <li>Chart: show actual count, not just %</li>
+          <li>Chart: click a bar to navigate to that class attendance</li>
+          <li>Mobile: stack all cards vertically</li>
+          <li>Add today's date prominently</li>
+        </ul>
+      </div>
+      <div class="qbox badd">
+        <h4>New Features to Add</h4>
+        <ul>
+          <li>Quick Actions row: Mark Attendance, Collect Fee, New Circular</li>
+          <li>Recent activity feed (last 10 actions)</li>
+          <li>Upcoming events widget (from calendar)</li>
+          <li>Low-attendance students alert list</li>
+          <li>Pending fee defaulters count (with link)</li>
+          <li>Role-based dashboard (teacher sees only their class)</li>
+          <li>Monthly fee collection trend line chart</li>
+          <li>Admissions funnel mini-widget</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODULE 3: ADMISSIONS ========== -->
+<div class="mcard">
+  <div class="mhead" style="background:linear-gradient(135deg,#fdf4ff,#ede9fe)">
+    <div class="micon" style="background:linear-gradient(135deg,#a855f7,#7c3aed)">📋</div>
+    <div class="mtitle"><h2>03 — Admission Management</h2><p>Enquiry pipeline from walk-in to enrolled student</p></div>
+  </div>
+  <div class="hbanner" style="background:#7c3aed">Current Status</div>
+  <div class="mbody">
+    <div class="srow">
+      <span class="badge b-done">5-Stage Funnel Cards ✓</span>
+      <span class="badge b-done">Funnel Click-filter ✓</span>
+      <span class="badge b-done">Status Advance Dropdown ✓</span>
+      <span class="badge b-done">Backend: Public Enquiry POST ✓</span>
+      <span class="badge b-missing">Add Enquiry Form (frontend) ✗</span>
+      <span class="badge b-missing">Enquiry Detail View ✗</span>
+      <span class="badge b-missing">Notes per Enquiry ✗</span>
+      <span class="badge b-missing">Follow-up Date ✗</span>
+    </div>
+    <div class="quad">
+      <div class="qbox bdev">
+        <h4>Backend Built</h4>
+        <ul>
+          <li>GET /admissions — list with status filter</li>
+          <li>GET /admissions/funnel — count per stage</li>
+          <li>POST /admissions — public, no auth required</li>
+          <li>PATCH /admissions/:id/status — advance stage</li>
+          <li>Stages: enquiry → application → interview → admitted → rejected</li>
+          <li>DB: admission_enquiries table with quota, source fields</li>
+        </ul>
+      </div>
+      <div class="qbox bui">
+        <h4>Current UI (actual code)</h4>
+        <ul>
+          <li>5 funnel stage cards (click to filter list)</li>
+          <li>Each card: count number + stage badge</li>
+          <li>Active filter: ring-2 ring-primary highlight</li>
+          <li>Table: 8 columns — Student, Class, Parent, Phone, Date, Quota, Status, Action</li>
+          <li>Action: dropdown "Move to..." per row</li>
+          <li>Status badge colored by stage</li>
+          <li>Alternating row colors</li>
+        </ul>
+      </div>
+      <div class="qbox bfix">
+        <h4>UI Improvements Needed</h4>
+        <ul>
+          <li>Add "New Enquiry" button → modal form</li>
+          <li>Funnel: show conversion % (e.g. "32% → admitted")</li>
+          <li>Row: click to open detail side-panel</li>
+          <li>Add source filter (walk-in / online / referral)</li>
+          <li>Show days in stage (e.g. "In Interview for 5 days")</li>
+          <li>Search by student name / parent phone</li>
+          <li>Highlight overdue follow-ups in red</li>
+          <li>Add date range filter</li>
+        </ul>
+      </div>
+      <div class="qbox badd">
+        <h4>New Features to Add</h4>
+        <ul>
+          <li>Notes field per enquiry (internal staff notes)</li>
+          <li>Follow-up date + reminder notification</li>
+          <li>WhatsApp follow-up message from inside row</li>
+          <li>Auto-create student on "admitted" stage</li>
+          <li>Enquiry source analytics (which channel converts best)</li>
+          <li>Online admission form link (public URL)</li>
+          <li>Document upload for admission (birth certificate)</li>
+          <li>AI lead scoring: rank enquiries by likelihood to admit</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODULE 4: STUDENTS ========== -->
+<div class="mcard">
+  <div class="mhead" style="background:linear-gradient(135deg,#eff6ff,#dbeafe)">
+    <div class="micon" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8)">🎓</div>
+    <div class="mtitle"><h2>04 — Student Management</h2><p>Complete student lifecycle, profiles, documents, TC generation</p></div>
+  </div>
+  <div class="hbanner" style="background:#1d4ed8">Current Status</div>
+  <div class="mbody">
+    <div class="srow">
+      <span class="badge b-done">Student List with Search ✓</span>
+      <span class="badge b-done">Backend: GET, POST, PUT /students ✓</span>
+      <span class="badge b-done">DB: students + parents + class_students tables ✓</span>
+      <span class="badge b-missing">Add Student Form ✗</span>
+      <span class="badge b-missing">Student Detail View ✗</span>
+      <span class="badge b-missing">Edit Student ✗</span>
+      <span class="badge b-missing">Document Upload ✗</span>
+      <span class="badge b-missing">Class/Section Filter ✗</span>
+      <span class="badge b-missing">Bulk Import ✗</span>
+    </div>
+    <div class="quad">
+      <div class="qbox bdev">
+        <h4>Backend Built</h4>
+        <ul>
+          <li>GET /students — list with ?search param</li>
+          <li>GET /students/:id — full profile</li>
+          <li>POST /students — create with parent record</li>
+          <li>PUT /students/:id — update profile</li>
+          <li>DB: students (UUID PK, admission_number, blood_group, aadhaar, category, status)</li>
+          <li>DB: parents (father/mother, occupation, income)</li>
+          <li>DB: student_documents (file uploads)</li>
+          <li>DB: class_students (many-to-many with academic_year)</li>
+        </ul>
+      </div>
+      <div class="qbox bui">
+        <h4>Current UI (actual code)</h4>
+        <ul>
+          <li>Heading + student count on right</li>
+          <li>Single search input (name or admission no.)</li>
+          <li>Table with 7 columns: Adm No, Name, Class, Section, Gender, Category, Status</li>
+          <li>Status badge: green "Active" / red "Inactive"</li>
+          <li>Alternating row striping</li>
+          <li>No photo column</li>
+          <li>No click action on rows</li>
+          <li>No filters, no export</li>
+        </ul>
+      </div>
+      <div class="qbox bfix">
+        <h4>UI Improvements Needed</h4>
+        <ul>
+          <li>Add "New Student" button with full form modal/page</li>
+          <li>Class + Section filter dropdowns</li>
+          <li>Gender + Category filter chips</li>
+          <li>Click row → student detail slide-out panel</li>
+          <li>Add photo thumbnail in table</li>
+          <li>Export to Excel / PDF button</li>
+          <li>Show parent mobile in table</li>
+          <li>Bulk actions: promote, mark inactive</li>
+          <li>Pagination or virtual scroll for large lists</li>
+        </ul>
+      </div>
+      <div class="qbox badd">
+        <h4>New Features to Add</h4>
+        <ul>
+          <li>Student detail page: full profile + parent info</li>
+          <li>Document upload (Aadhaar, birth cert, caste cert)</li>
+          <li>Attendance history tab on student profile</li>
+          <li>Fee history tab on student profile</li>
+          <li>Marks history across exams</li>
+          <li>TC (Transfer Certificate) generation PDF</li>
+          <li>Bulk import via Excel upload</li>
+          <li>Year-end bulk class promotion wizard</li>
+          <li>Student ID card PDF generation</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODULE 5: STAFF ========== -->
+<div class="mcard">
+  <div class="mhead" style="background:linear-gradient(135deg,#fff7ed,#fed7aa)">
+    <div class="micon" style="background:linear-gradient(135deg,#f97316,#c2410c)">👥</div>
+    <div class="mtitle"><h2>05 — Staff & HR Management</h2><p>Teaching and non-teaching staff with attendance and leave tracking</p></div>
+  </div>
+  <div class="hbanner" style="background:#c2410c">Current Status</div>
+  <div class="mbody">
+    <div class="srow">
+      <span class="badge b-done">Staff List with Type Filter ✓</span>
+      <span class="badge b-done">Today's Attendance Summary Table ✓</span>
+      <span class="badge b-done">Backend: GET, POST /staff ✓</span>
+      <span class="badge b-done">Backend: POST /staff/attendance/bulk ✓</span>
+      <span class="badge b-done">DB: staff + staff_attendance + staff_subjects ✓</span>
+      <span class="badge b-missing">Add Staff Form ✗</span>
+      <span class="badge b-missing">Mark Staff Attendance UI ✗</span>
+      <span class="badge b-missing">Leave Management UI ✗</span>
+      <span class="badge b-missing">Staff Detail View ✗</span>
+    </div>
+    <div class="quad">
+      <div class="qbox bdev">
+        <h4>Backend Built</h4>
+        <ul>
+          <li>GET /staff — list with ?staff_type filter</li>
+          <li>POST /staff — create staff member</li>
+          <li>POST /staff/attendance/bulk — mark attendance array</li>
+          <li>GET /staff/attendance/today — summary by type</li>
+          <li>Staff types: teaching, non_teaching, administration, outsource</li>
+          <li>DB: staff_attendance (status: present/absent/half_day/on_duty/late/leave)</li>
+          <li>DB: staff_subjects (teacher ↔ subject mapping for timetable)</li>
+        </ul>
+      </div>
+      <div class="qbox bui">
+        <h4>Current UI (actual code)</h4>
+        <ul>
+          <li>Today's attendance summary: table with 7 columns by type (total, absent, half_day, on_duty, late, leave)</li>
+          <li>Blue header banner "Staff Attendance — Today"</li>
+          <li>Type filter: pill buttons (All, teaching, non_teaching, administration, outsource)</li>
+          <li>Active filter: bg-primary text-white</li>
+          <li>Staff table: Name, Phone, Type badge, Department, Employee Code</li>
+          <li>Type badge color-coded by type</li>
+          <li>No mark attendance form on this page</li>
+        </ul>
+      </div>
+      <div class="qbox bfix">
+        <h4>UI Improvements Needed</h4>
+        <ul>
+          <li>Add "Mark Attendance" button → opens staff list with P/A/L toggles (same pattern as student attendance)</li>
+          <li>Add "Add Staff" button → multi-step form modal</li>
+          <li>Click row → staff detail slide-out</li>
+          <li>Show photo thumbnail in table</li>
+          <li>Add subject assignments column (for teachers)</li>
+          <li>Summary cards at top (total staff, absent today, on leave)</li>
+          <li>Color-code absent count in red in summary table</li>
+        </ul>
+      </div>
+      <div class="qbox badd">
+        <h4>New Features to Add</h4>
+        <ul>
+          <li>Staff detail page: profile + subject assignments</li>
+          <li>Leave management: apply / approve / reject UI</li>
+          <li>Monthly attendance calendar view per staff</li>
+          <li>Leave balance tracker (CL/EL/SL)</li>
+          <li>Subject assignment editor (drag-drop teacher to subject)</li>
+          <li>Staff performance page (attendance %, substitutions taken)</li>
+          <li>Payslip download link on staff profile</li>
+          <li>Staff ID card PDF generation</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODULE 6: ATTENDANCE ========== -->
+<div class="mcard">
+  <div class="mhead" style="background:linear-gradient(135deg,#f0fdfa,#ccfbf1)">
+    <div class="micon" style="background:linear-gradient(135deg,#14b8a6,#0f766e)">✅</div>
+    <div class="mtitle"><h2>06 — Student Attendance Tracking</h2><p>Class-wise daily attendance with parent WhatsApp alert on absence</p></div>
+  </div>
+  <div class="hbanner" style="background:#0f766e">Current Status</div>
+  <div class="mbody">
+    <div class="srow">
+      <span class="badge b-done">Class Overview Grid ✓</span>
+      <span class="badge b-done">Mark Attendance (P/A/Late) ✓</span>
+      <span class="badge b-done">Backend: POST /attendance/mark ✓</span>
+      <span class="badge b-done">Backend: GET /attendance/class/:id ✓</span>
+      <span class="badge b-done">Backend: GET /attendance/overview ✓</span>
+      <span class="badge b-partial">Class selector is raw UUID input ⚠</span>
+      <span class="badge b-missing">Monthly calendar view ✗</span>
+      <span class="badge b-missing">Low-attendance alert list ✗</span>
+    </div>
+    <div class="quad">
+      <div class="qbox bdev">
+        <h4>Backend Built</h4>
+        <ul>
+          <li>POST /attendance/mark — bulk array [{student_id, status}]</li>
+          <li>GET /attendance/class/:id?date= — roster with status</li>
+          <li>GET /attendance/overview — all classes % for today</li>
+          <li>GET /attendance/student/:id/monthly — calendar data</li>
+          <li>GET /attendance/report/overview</li>
+          <li>Status options: present, absent, late, on_leave</li>
+          <li>DB: student_attendance (student_id, class_id, date, status, marked_by)</li>
+        </ul>
+      </div>
+      <div class="qbox bui">
+        <h4>Current UI (actual code)</h4>
+        <ul>
+          <li>Overview grid: class cards with 2-line stats (name, %, present/total)</li>
+          <li>Blue % text, cards show first 6 classes</li>
+          <li>Mark Attendance section: white card</li>
+          <li>UUID text input for Class ID (bad UX)</li>
+          <li>Date picker (defaults to today)</li>
+          <li>Load Class button</li>
+          <li>Student list: name + roll number + 3 pill buttons (Present, Absent, Late)</li>
+          <li>Active button: colored + ring highlight</li>
+          <li>Save button: full width blue</li>
+        </ul>
+      </div>
+      <div class="qbox bfix">
+        <h4>UI Improvements Needed</h4>
+        <ul>
+          <li><strong>Replace UUID input with class dropdown</strong> — fetch classes from API</li>
+          <li>Overview: show all classes, not just first 6</li>
+          <li>Add "Mark All Present" bulk action button</li>
+          <li>Date navigation arrows (← yesterday | today | tomorrow →)</li>
+          <li>Show "Already marked" badge if attendance exists for selected date</li>
+          <li>Student row: add photo thumbnail</li>
+          <li>Add roll-number sorting</li>
+          <li>Show summary count (Present: 28 / Absent: 3 / Late: 1) live as marking</li>
+        </ul>
+      </div>
+      <div class="qbox badd">
+        <h4>New Features to Add</h4>
+        <ul>
+          <li>Monthly attendance calendar view per student</li>
+          <li>Low-attendance (below 75%) alert list with parent contact</li>
+          <li>WhatsApp blast to absent students' parents (one-click)</li>
+          <li>Attendance trend chart (week-over-week per class)</li>
+          <li>Holiday calendar setup (exclude from denominator)</li>
+          <li>Late entry with reason field</li>
+          <li>Download monthly attendance register (CBSE format PDF)</li>
+          <li>Teacher view: only their assigned class</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODULE 7: TIMETABLE ========== -->
+<div class="mcard">
+  <div class="mhead" style="background:linear-gradient(135deg,#eef2ff,#e0e7ff)">
+    <div class="micon" style="background:linear-gradient(135deg,#6366f1,#4338ca)">🤖</div>
+    <div class="mtitle"><h2>07 — Timetable & AI Scheduling</h2><p>AI-powered conflict-free schedule generation + substitution management</p></div>
+  </div>
+  <div class="hbanner" style="background:#4338ca">Current Status</div>
+  <div class="mbody">
+    <div class="srow">
+      <span class="badge b-done">5×8 Timetable Grid ✓</span>
+      <span class="badge b-done">AI Auto-Generate (Claude API) ✓</span>
+      <span class="badge b-done">Backend: POST /timetable/generate ✓</span>
+      <span class="badge b-done">Backend: POST /timetable/substitution ✓</span>
+      <span class="badge b-ai">Conflict Detection by AI ✓</span>
+      <span class="badge b-partial">Class selector is raw UUID input ⚠</span>
+      <span class="badge b-missing">Substitution UI ✗</span>
+      <span class="badge b-missing">Drag-drop edit ✗</span>
+      <span class="badge b-missing">Print / Export ✗</span>
+    </div>
+    <div class="quad">
+      <div class="qbox bdev">
+        <h4>Backend Built</h4>
+        <ul>
+          <li>GET /timetable/:classId — fetch slots for class</li>
+          <li>POST /timetable/generate — calls Claude AI with teacher+subject+rule data → returns conflict-free schedule</li>
+          <li>POST /timetable/substitution — finds available teacher for absent staff's period</li>
+          <li>DB: timetable_slots (class_id, teacher_id, subject_id, day_of_week 1-5, period_number 1-8)</li>
+          <li>DB: timetable_rules (periods/day, duration, break positions)</li>
+          <li>DB: timetable_substitutions</li>
+          <li>Model: claude-sonnet-4-6, max_tokens: 4096</li>
+        </ul>
+      </div>
+      <div class="qbox bui">
+        <h4>Current UI (actual code)</h4>
+        <ul>
+          <li>UUID text input for class ID (bad UX)</li>
+          <li>"Load" button (gray) + "AI Auto-Generate" button (blue)</li>
+          <li>Generating state: "Generating with AI..." on button</li>
+          <li>5 rows (Mon–Fri) × 8 columns (periods)</li>
+          <li>Slot cell: blue card with subject name (bold) + teacher name (small)</li>
+          <li>Empty slot: gray dash</li>
+          <li>Table header: dark blue row with period numbers</li>
+          <li>No substitution UI anywhere</li>
+        </ul>
+      </div>
+      <div class="qbox bfix">
+        <h4>UI Improvements Needed</h4>
+        <ul>
+          <li><strong>Replace UUID input with class dropdown</strong></li>
+          <li>Add period labels with time (8:00–8:45, etc.)</li>
+          <li>Add lunch break row (visually distinct)</li>
+          <li>Color slots by subject (each subject gets a consistent color)</li>
+          <li>Hover tooltip: teacher name, room number</li>
+          <li>Add print / export to PDF button</li>
+          <li>Show teacher workload summary below grid</li>
+          <li>Loading skeleton on AI generation</li>
+        </ul>
+      </div>
+      <div class="qbox badd">
+        <h4>New Features to Add</h4>
+        <ul>
+          <li>Substitution management UI: select absent teacher → view their periods → assign substitute</li>
+          <li>Drag-drop slot editing with conflict highlight</li>
+          <li>Teacher's personal timetable view</li>
+          <li>All-class timetable view (grid per teacher)</li>
+          <li>Academic year / term selector</li>
+          <li>Timetable rules configuration page</li>
+          <li>Free period + activity period support</li>
+          <li>Room / lab allocation per slot</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODULE 8: EXAMINATIONS ========== -->
+<div class="mcard">
+  <div class="mhead" style="background:linear-gradient(135deg,#fff1f2,#ffe4e6)">
+    <div class="micon" style="background:linear-gradient(135deg,#ef4444,#b91c1c)">📝</div>
+    <div class="mtitle"><h2>08 — Examinations & Report Cards</h2><p>CBSE marks entry, AI remarks, grade calculation, report card PDF</p></div>
+  </div>
+  <div class="hbanner" style="background:#b91c1c">Current Status</div>
+  <div class="mbody">
+    <div class="srow">
+      <span class="badge b-done">Backend: Exams, Marks, Report Cards ✓</span>
+      <span class="badge b-done">CBSE Grade Scale Reference ✓</span>
+      <span class="badge b-done">AI Rephrase Tool (Claude) ✓</span>
+      <span class="badge b-done">DB: exams, exam_schedules, marks, report_cards, grade_config ✓</span>
+      <span class="badge b-missing">Exam List / Creation UI ✗</span>
+      <span class="badge b-missing">Marks Entry Form ✗</span>
+      <span class="badge b-missing">Report Card View/Download ✗</span>
+      <span class="badge b-missing">Publish Report Cards ✗</span>
+    </div>
+    <div class="quad">
+      <div class="qbox bdev">
+        <h4>Backend Built</h4>
+        <ul>
+          <li>POST /examinations/marks — bulk marks entry with AI rephrase</li>
+          <li>GET /examinations/marksheet/:examId/:classId — consolidated</li>
+          <li>POST /examinations/report-cards/publish/:examId/:classId</li>
+          <li>DB: exams (name, type: FA/SA, term, academic_year)</li>
+          <li>DB: marks (student_id, exam_id, subject_id, marks_obtained, max_marks, remarks)</li>
+          <li>DB: report_cards (published, pdf_url)</li>
+          <li>DB: grade_config (CBSE A1–E seeded)</li>
+          <li>PDFKit for report card PDF generation</li>
+        </ul>
+      </div>
+      <div class="qbox bui">
+        <h4>Current UI (actual code)</h4>
+        <ul>
+          <li>Feature overview cards (6 cards with icon + label + desc)</li>
+          <li>AI Communication Assistant card: textarea + Rephrase button</li>
+          <li>AI result shown in green box below textarea</li>
+          <li>CBSE Grade Scale: 8 colored chips (A1–E with % range)</li>
+          <li><strong>No actual marks entry form</strong></li>
+          <li><strong>No exam list</strong></li>
+          <li><strong>No report card generation UI</strong></li>
+          <li>This page is essentially a "coming soon" with demo tools</li>
+        </ul>
+      </div>
+      <div class="qbox bfix">
+        <h4>UI Improvements Needed</h4>
+        <ul>
+          <li>Complete rebuild needed — add real functionality</li>
+          <li>Tab structure: Exams | Marks Entry | Report Cards</li>
+          <li>Exam list table (name, type, date, class, status)</li>
+          <li>Marks entry: class dropdown + exam selector → student grid</li>
+          <li>Each row: student name + marks input field + auto-grade badge</li>
+          <li>AI rephrase embedded in marks entry flow (not separate card)</li>
+          <li>Report cards tab: list with published/draft status + download</li>
+          <li>Move grade scale to a reference sidebar, not main content</li>
+        </ul>
+      </div>
+      <div class="qbox badd">
+        <h4>New Features to Add</h4>
+        <ul>
+          <li>Exam creation wizard (name, type, subjects, date range)</li>
+          <li>Marks entry form with validation + auto-grade preview</li>
+          <li>Consolidated marksheet view per class</li>
+          <li>Rank calculation (class rank, section rank)</li>
+          <li>Report card PDF with school header + student photo</li>
+          <li>Publish report cards → parent gets WhatsApp link</li>
+          <li>Performance trend chart per student across terms</li>
+          <li>Failure list extraction (students below passing marks)</li>
+          <li>Co-scholastic / activity grades entry</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODULE 9: FEES ========== -->
+<div class="mcard">
+  <div class="mhead" style="background:linear-gradient(135deg,#fefce8,#fef9c3)">
+    <div class="micon" style="background:linear-gradient(135deg,#eab308,#a16207)">💰</div>
+    <div class="mtitle"><h2>09 — Fee Management (3-Method System)</h2><p>Challan + Counter Cash + Online Razorpay with AI bank reconciliation</p></div>
+  </div>
+  <div class="hbanner" style="background:#a16207">Current Status</div>
+  <div class="mbody">
+    <div class="srow">
+      <span class="badge b-done">Outstanding Table (3-column totals header) ✓</span>
+      <span class="badge b-done">Concessions Table ✓</span>
+      <span class="badge b-done">EOD Report by method ✓</span>
+      <span class="badge b-done">Backend: 3-method collection ✓</span>
+      <span class="badge b-done">Backend: AI bank reconciliation ✓</span>
+      <span class="badge b-done">DB: challans, transactions, receipts, bank_statements ✓</span>
+      <span class="badge b-missing">Counter Collection Form ✗</span>
+      <span class="badge b-missing">Challan Generation UI ✗</span>
+      <span class="badge b-missing">Razorpay Payment UI ✗</span>
+      <span class="badge b-missing">Bank Statement Upload ✗</span>
+    </div>
+    <div class="quad">
+      <div class="qbox bdev">
+        <h4>Backend Built</h4>
+        <ul>
+          <li>GET /fees/outstanding — with totals header</li>
+          <li>GET /fees/concessions</li>
+          <li>POST /fees/counter — cash collection + receipt</li>
+          <li>POST /fees/challan — generate challan PDF</li>
+          <li>POST /fees/bank-reconciliation — AI match bank statement</li>
+          <li>GET /fees/structure/:classId</li>
+          <li>GET /reports/eod — by collection method + count</li>
+          <li>DB: fee_outstanding (GENERATED ALWAYS computed column)</li>
+          <li>DB: duplicate_payment_alerts</li>
+        </ul>
+      </div>
+      <div class="qbox bui">
+        <h4>Current UI (actual code)</h4>
+        <ul>
+          <li>3 method badges at top (Challan/Counter/Online pills)</li>
+          <li>3-tab navigation: Outstanding / Concessions / EOD Report</li>
+          <li>Outstanding: dark blue totals header (Total / Collected / Outstanding)</li>
+          <li>Table: Adm No, Student, Class, Total, Paid, Outstanding (red)</li>
+          <li>Concessions: 8-col table with category + %</li>
+          <li>EOD: date picker + 3 method cards (method name + ₹amount + count)</li>
+          <li>No collection forms anywhere</li>
+          <li>No challan generation</li>
+        </ul>
+      </div>
+      <div class="qbox bfix">
+        <h4>UI Improvements Needed</h4>
+        <ul>
+          <li>Add "Collect Fee" action button on each outstanding row</li>
+          <li>Add search / class filter on outstanding tab</li>
+          <li>Outstanding: show "days overdue" column</li>
+          <li>Outstanding: highlight long-overdue rows in red</li>
+          <li>EOD: add bar chart showing collection by method</li>
+          <li>Add 4th tab: "Collect / Transact" for counter entry</li>
+          <li>Add 5th tab: "Bank Reconciliation" for statement upload</li>
+          <li>Print receipt button after collection</li>
+        </ul>
+      </div>
+      <div class="qbox badd">
+        <h4>New Features to Add</h4>
+        <ul>
+          <li>Counter collection modal: select student → select fee heads → collect → print receipt</li>
+          <li>Challan generation: student lookup → generate PDF</li>
+          <li>Bank statement CSV upload → AI reconciliation results view</li>
+          <li>Razorpay payment link (send to parent via WhatsApp)</li>
+          <li>Fee structure setup page (heads + amounts per class)</li>
+          <li>Concession assignment form (per student)</li>
+          <li>Fee reminder blast (WhatsApp to all overdue parents)</li>
+          <li>Duplicate payment alerts dashboard</li>
+          <li>Fee receipt history per student</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODULE 10: REPORTS ========== -->
+<div class="mcard">
+  <div class="mhead" style="background:linear-gradient(135deg,#f8fafc,#f1f5f9)">
+    <div class="micon" style="background:linear-gradient(135deg,#64748b,#334155)">📈</div>
+    <div class="mtitle"><h2>10 — Reports & Exports</h2><p>On-demand reports for management, accounts, and compliance</p></div>
+  </div>
+  <div class="hbanner" style="background:#334155">Current Status</div>
+  <div class="mbody">
+    <div class="srow">
+      <span class="badge b-done">3 Report Types (Outstanding / Attendance / EOD) ✓</span>
+      <span class="badge b-done">Dynamic Table (auto-renders any response) ✓</span>
+      <span class="badge b-done">Filter inputs (Class, Term, Month, Year, Date) ✓</span>
+      <span class="badge b-partial">Filters use raw UUID input fields ⚠</span>
+      <span class="badge b-missing">PDF/Excel Export ✗</span>
+      <span class="badge b-missing">Marksheet Report ✗</span>
+      <span class="badge b-missing">Scheduled Reports ✗</span>
+    </div>
+    <div class="quad">
+      <div class="qbox bdev">
+        <h4>Backend Built</h4>
+        <ul>
+          <li>GET /reports/fee-outstanding — class/term filter</li>
+          <li>GET /reports/attendance — monthly per student</li>
+          <li>GET /reports/eod — end-of-day collection</li>
+          <li>GET /reports/marksheet/:examId/:classId — PDFKit PDF</li>
+          <li>Cron: daily stats email at 18:30</li>
+          <li>Cron: weekly fee reminders Monday 08:00</li>
+          <li>Cron: daily stats at 18:30</li>
+        </ul>
+      </div>
+      <div class="qbox bui">
+        <h4>Current UI (actual code)</h4>
+        <ul>
+          <li>3 clickable report-type cards (icon + label + desc)</li>
+          <li>Active card: ring-2 ring-primary highlight</li>
+          <li>Filter bar: 5 inputs in a flex-wrap row (Class ID, Term ID, Month, Year, Date)</li>
+          <li>Dynamic table: auto-renders all keys from first response row as column headers</li>
+          <li>Key names humanized (underscores → spaces, capitalize)</li>
+          <li>Alternating rows</li>
+          <li>No export button</li>
+          <li>No date range picker</li>
+        </ul>
+      </div>
+      <div class="qbox bfix">
+        <h4>UI Improvements Needed</h4>
+        <ul>
+          <li>Replace UUID inputs with dropdowns (fetch classes, terms from API)</li>
+          <li>Add Export to Excel / PDF buttons in table header</li>
+          <li>Add report description text / instructions per type</li>
+          <li>Show total count + sum row at bottom of table</li>
+          <li>Date range picker (from–to) instead of single month/year</li>
+          <li>Add "No data" illustration instead of empty table</li>
+          <li>Add print-friendly CSS / print button</li>
+          <li>Show when report was last run</li>
+        </ul>
+      </div>
+      <div class="qbox badd">
+        <h4>New Features to Add</h4>
+        <ul>
+          <li>Marksheet report (exam → class → all students with marks)</li>
+          <li>Staff payroll report (monthly salary summary)</li>
+          <li>Student strength report (class-wise enrollment count)</li>
+          <li>Admission conversion report</li>
+          <li>Transport route-wise student list</li>
+          <li>Library overdue report</li>
+          <li>Scheduled report delivery (email to principal daily)</li>
+          <li>Government compliance reports (UDISE format)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MISSING MODULES ========== -->
+<div style="background:#fff;border-radius:20px;padding:32px;margin-bottom:40px;box-shadow:0 2px 20px rgba(0,0,0,.06)">
+  <h2 style="font-size:22px;font-weight:900;margin-bottom:6px;color:#dc2626">⚠ 4 Backend Modules Have NO Frontend Page</h2>
+  <p style="color:#64748b;font-size:13px;margin-bottom:20px">These are fully built on the backend with DB tables and API routes, but are completely missing from App.jsx routing and the Sidebar navigation.</p>
+
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px">
+
+    <div class="alert-box">
+      <strong>📢 Communications — Not in App.jsx</strong>
+      Backend has: GET/POST /communications/circulars, POST /communications/circulars/:id/publish, POST /communications/ai/rephrase<br><br>
+      <strong>Need to build:</strong> Circular list, AI-assisted composer, audience selector, published vs draft tabs, notice board view
+    </div>
+
+    <div class="alert-box">
+      <strong>📚 Library — Not in App.jsx</strong>
+      Backend has: GET/POST /library/books, POST /library/issue, POST /library/return (with ₹2/day fine calculation, stock lock)<br><br>
+      <strong>Need to build:</strong> Book catalog, issue form, return form with fine display, overdue list, stock overview
+    </div>
+
+    <div class="alert-box">
+      <strong>🚌 Transport — Not in App.jsx</strong>
+      Backend has: GET /transport/routes, GET /transport/stops/:routeId, POST /transport/routes, POST /transport/assign<br><br>
+      <strong>Need to build:</strong> Route list map view, stop management, student assignment, vehicle tracking placeholder
+    </div>
+
+    <div class="alert-box">
+      <strong>💵 Payroll — Not in App.jsx</strong>
+      Backend has: GET/POST /payroll/salary-structure/:staffId, POST /payroll/run (generates payslips for all active staff), GET /payroll/payslips/:staffId<br><br>
+      <strong>Need to build:</strong> Salary structure editor per staff, run payroll button with month picker, payslip list with PDF download
+    </div>
+
+  </div>
+</div>
+
+<!-- ========== COMMUNICATIONS MODULE ========== -->
+<div class="mcard">
+  <div class="mhead" style="background:linear-gradient(135deg,#fdf2f8,#fce7f3)">
+    <div class="micon" style="background:linear-gradient(135deg,#ec4899,#be185d)">📢</div>
+    <div class="mtitle"><h2>11 — Communications & Circulars</h2><p>AI-assisted announcements with WhatsApp + in-app delivery</p></div>
+  </div>
+  <div class="hbanner" style="background:#be185d">Current Status — FRONTEND PAGE MISSING</div>
+  <div class="mbody">
+    <div class="srow">
+      <span class="badge b-done">Backend: GET/POST /communications/circulars ✓</span>
+      <span class="badge b-done">Backend: POST /publish ✓</span>
+      <span class="badge b-done">Backend: POST /ai/rephrase (Claude) ✓</span>
+      <span class="badge b-done">DB: circulars, notification_logs, whatsapp_templates ✓</span>
+      <span class="badge b-missing">Frontend Page: Does not exist ✗</span>
+      <span class="badge b-missing">Not in Sidebar ✗</span>
+      <span class="badge b-missing">Not in App.jsx routes ✗</span>
+    </div>
+    <div class="quad">
+      <div class="qbox bdev">
+        <h4>Backend Built</h4>
+        <ul>
+          <li>GET /communications/circulars — list by school</li>
+          <li>POST /communications/circulars — create draft (title, content, target_audience, type)</li>
+          <li>POST /communications/circulars/:id/publish</li>
+          <li>POST /communications/ai/rephrase — Claude AI text polish</li>
+          <li>Target audience: all / parents / staff / class-specific</li>
+          <li>DB: whatsapp_templates (pre-approved WA message templates)</li>
+          <li>DB: notification_logs (delivery tracking)</li>
+        </ul>
+      </div>
+      <div class="qbox bui">
+        <h4>Current UI</h4>
+        <ul>
+          <li style="color:#dc2626;font-weight:600">No page exists</li>
+          <li>AI rephrase tool exists inside ExaminationsPage as standalone widget</li>
+          <li>Not accessible from sidebar</li>
+          <li>Not in App.jsx router</li>
+        </ul>
+      </div>
+      <div class="qbox bfix">
+        <h4>What to Build (UI)</h4>
+        <ul>
+          <li>New page: /communications route</li>
+          <li>Add "Communications" to Sidebar nav</li>
+          <li>Tab 1: Circulars — published list (title, date, audience, delivery count)</li>
+          <li>Tab 2: Compose — title + body textarea + AI Rephrase button + audience multi-select</li>
+          <li>Tab 3: Notice Board — read-only archive sorted newest first</li>
+          <li>Publish confirmation: "Send to 450 parents via WhatsApp?"</li>
+        </ul>
+      </div>
+      <div class="qbox badd">
+        <h4>Enhancements</h4>
+        <ul>
+          <li>Draft / Published / Scheduled states</li>
+          <li>Schedule send (set date + time)</li>
+          <li>Read receipt count per circular</li>
+          <li>Event calendar integration</li>
+          <li>SMS fallback for parents without WhatsApp</li>
+          <li>Attachment support (PDF circulars)</li>
+          <li>Language toggle (English / Tamil / Hindi)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== LIBRARY MODULE ========== -->
+<div class="mcard">
+  <div class="mhead" style="background:linear-gradient(135deg,#f8fafc,#e2e8f0)">
+    <div class="micon" style="background:linear-gradient(135deg,#475569,#1e293b)">📚</div>
+    <div class="mtitle"><h2>12 — Library Management</h2><p>Book catalog, issue/return with ₹2/day fine and overdue tracking</p></div>
+  </div>
+  <div class="hbanner" style="background:#1e293b">Current Status — FRONTEND PAGE MISSING</div>
+  <div class="mbody">
+    <div class="srow">
+      <span class="badge b-done">Backend: GET/POST /library/books ✓</span>
+      <span class="badge b-done">Backend: POST /library/issue (stock lock FOR UPDATE) ✓</span>
+      <span class="badge b-done">Backend: POST /library/return (₹2/day fine) ✓</span>
+      <span class="badge b-done">DB: books, book_issues ✓</span>
+      <span class="badge b-missing">Frontend Page: Does not exist ✗</span>
+    </div>
+    <div class="quad">
+      <div class="qbox bdev">
+        <h4>Backend Built</h4>
+        <ul>
+          <li>GET /library/books — catalog list</li>
+          <li>POST /library/books — add book (title, author, ISBN, copies)</li>
+          <li>POST /library/issue — student_id + book_id, locks last copy atomically (FOR UPDATE)</li>
+          <li>POST /library/return — calculates fine: DATEDIFF × ₹2</li>
+          <li>DB: books (title, author, isbn, publisher, total_copies, available_copies)</li>
+          <li>DB: book_issues (student_id, book_id, issue_date, due_date, return_date, fine_amount)</li>
+        </ul>
+      </div>
+      <div class="qbox bui">
+        <h4>Current UI</h4>
+        <ul>
+          <li style="color:#dc2626;font-weight:600">No page exists</li>
+        </ul>
+      </div>
+      <div class="qbox bfix">
+        <h4>What to Build (UI)</h4>
+        <ul>
+          <li>New page: /library route + Sidebar item</li>
+          <li>Tab 1: Books — searchable catalog table (title, author, available/total)</li>
+          <li>Tab 2: Issue Book — student search → book search → issue button</li>
+          <li>Tab 3: Return — scan/search issued book → show fine → confirm return</li>
+          <li>Tab 4: Overdue — list of all unreturned books with fine amount</li>
+          <li>Add Book modal form</li>
+        </ul>
+      </div>
+      <div class="qbox badd">
+        <h4>Enhancements</h4>
+        <ul>
+          <li>Book barcode / QR scan support</li>
+          <li>WhatsApp overdue reminder to parent</li>
+          <li>Student library history tab</li>
+          <li>Most borrowed books analytics</li>
+          <li>Book reservation / request queue</li>
+          <li>Digital e-book link support</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== TRANSPORT MODULE ========== -->
+<div class="mcard">
+  <div class="mhead" style="background:linear-gradient(135deg,#eff6ff,#dbeafe)">
+    <div class="micon" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8)">🚌</div>
+    <div class="mtitle"><h2>13 — Transport Management</h2><p>Bus routes, stops, vehicle assignment, student transport mapping</p></div>
+  </div>
+  <div class="hbanner" style="background:#1d4ed8">Current Status — FRONTEND PAGE MISSING</div>
+  <div class="mbody">
+    <div class="srow">
+      <span class="badge b-done">Backend: GET /transport/routes ✓</span>
+      <span class="badge b-done">Backend: GET /transport/stops/:routeId ✓</span>
+      <span class="badge b-done">Backend: POST /transport/routes (with stops array) ✓</span>
+      <span class="badge b-done">Backend: POST /transport/assign (student to stop) ✓</span>
+      <span class="badge b-done">DB: routes, stops, vehicles, student_transport ✓</span>
+      <span class="badge b-missing">Frontend Page: Does not exist ✗</span>
+    </div>
+    <div class="quad">
+      <div class="qbox bdev">
+        <h4>Backend Built</h4>
+        <ul>
+          <li>GET /transport/routes — list all routes</li>
+          <li>GET /transport/stops/:routeId — stops with coordinates + pickup_time</li>
+          <li>POST /transport/routes — create route + stops in one call</li>
+          <li>POST /transport/assign — student_id + stop_id</li>
+          <li>DB: routes (name, from_location, to_location)</li>
+          <li>DB: stops (route_id, name, latitude, longitude, pickup_time, sequence_order)</li>
+          <li>DB: vehicles (reg_no, capacity, driver_name, driver_phone)</li>
+          <li>DB: student_transport (student_id, route_id, stop_id)</li>
+        </ul>
+      </div>
+      <div class="qbox bui">
+        <h4>Current UI</h4>
+        <ul>
+          <li style="color:#dc2626;font-weight:600">No page exists</li>
+        </ul>
+      </div>
+      <div class="qbox bfix">
+        <h4>What to Build (UI)</h4>
+        <ul>
+          <li>New page: /transport route + Sidebar item</li>
+          <li>Tab 1: Routes — list with stop count + vehicle + driver</li>
+          <li>Tab 2: Students — per-route student list with stop assignment</li>
+          <li>Tab 3: Vehicles — vehicle registry with driver details</li>
+          <li>Route create modal: name + add stops (ordered list)</li>
+          <li>Student assign: search student → select route/stop</li>
+        </ul>
+      </div>
+      <div class="qbox badd">
+        <h4>Enhancements</h4>
+        <ul>
+          <li>Google Maps route display</li>
+          <li>Live GPS tracking (driver app integration)</li>
+          <li>Parent ETA notification (5 min away alert)</li>
+          <li>Driver license expiry alert</li>
+          <li>Transport fee auto-link to fee module</li>
+          <li>Route-wise headcount report</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== PAYROLL MODULE ========== -->
+<div class="mcard">
+  <div class="mhead" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7)">
+    <div class="micon" style="background:linear-gradient(135deg,#22c55e,#15803d)">💵</div>
+    <div class="mtitle"><h2>14 — Payroll & Salary Management</h2><p>Monthly salary run with attendance-linked LOP deductions and payslip PDF</p></div>
+  </div>
+  <div class="hbanner" style="background:#15803d">Current Status — FRONTEND PAGE MISSING</div>
+  <div class="mbody">
+    <div class="srow">
+      <span class="badge b-done">Backend: GET/POST /payroll/salary-structure/:staffId ✓</span>
+      <span class="badge b-done">Backend: POST /payroll/run (generates all payslips) ✓</span>
+      <span class="badge b-done">Backend: GET /payroll/payslips/:staffId ✓</span>
+      <span class="badge b-done">DB: salary_structures, payroll_runs, payslips ✓</span>
+      <span class="badge b-missing">Frontend Page: Does not exist ✗</span>
+    </div>
+    <div class="quad">
+      <div class="qbox bdev">
+        <h4>Backend Built</h4>
+        <ul>
+          <li>GET /payroll/salary-structure/:staffId</li>
+          <li>POST /payroll/salary-structure/:staffId — set components</li>
+          <li>POST /payroll/run — {month, year} → reads all staff attendance → calculates LOP → generates payslips for every active staff</li>
+          <li>GET /payroll/payslips/:staffId — payslip history</li>
+          <li>DB: salary_structures (basic, hra, ta, da, special_allowance, pf, professional_tax)</li>
+          <li>DB: payroll_runs (month, year, status: processing/completed)</li>
+          <li>DB: payslips (gross, deductions, net_pay, pdf_url)</li>
+        </ul>
+      </div>
+      <div class="qbox bui">
+        <h4>Current UI</h4>
+        <ul>
+          <li style="color:#dc2626;font-weight:600">No page exists</li>
+        </ul>
+      </div>
+      <div class="qbox bfix">
+        <h4>What to Build (UI)</h4>
+        <ul>
+          <li>New page: /payroll route + Sidebar item</li>
+          <li>Tab 1: Run Payroll — month/year picker + "Run for All Staff" button + confirmation modal</li>
+          <li>Tab 2: Payslips — staff search → payslip history list → PDF download</li>
+          <li>Tab 3: Salary Structures — staff list → click to edit structure</li>
+          <li>Salary structure form: earnings + deductions grid with amounts</li>
+          <li>Run result: show summary (total paid, staff count, total deductions)</li>
+        </ul>
+      </div>
+      <div class="qbox badd">
+        <h4>Enhancements</h4>
+        <ul>
+          <li>Payslip PDF with school logo + formatted breakdown</li>
+          <li>WhatsApp/email payslip delivery to staff</li>
+          <li>PF contribution register export</li>
+          <li>TDS deduction register</li>
+          <li>Annual Form 16 generation</li>
+          <li>Incentive / bonus component</li>
+          <li>Arrears calculation support</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== OVERALL PRIORITY TABLE ========== -->
+<div style="background:#fff;border-radius:20px;padding:32px;margin-bottom:40px;box-shadow:0 2px 20px rgba(0,0,0,.06)">
+  <h2 style="font-size:22px;font-weight:900;margin-bottom:20px">Priority Action Plan — What to Build Next</h2>
+  <table class="itbl">
+    <thead>
+      <tr>
+        <th>Priority</th>
+        <th>Module</th>
+        <th>Task</th>
+        <th>Effort</th>
+        <th>Impact</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="badge b-missing">P1 — Critical</span></td>
+        <td>Attendance</td>
+        <td>Replace UUID input with class dropdown API call</td>
+        <td>2 hrs</td>
+        <td>Usability — currently unusable without knowing UUIDs</td>
+      </tr>
+      <tr>
+        <td><span class="badge b-missing">P1 — Critical</span></td>
+        <td>Timetable</td>
+        <td>Replace UUID input with class dropdown</td>
+        <td>2 hrs</td>
+        <td>Usability — same issue as attendance</td>
+      </tr>
+      <tr>
+        <td><span class="badge b-missing">P1 — Critical</span></td>
+        <td>Examinations</td>
+        <td>Build actual marks entry form (exam list + student grid + marks inputs)</td>
+        <td>1 day</td>
+        <td>Core feature — page is currently placeholder only</td>
+      </tr>
+      <tr>
+        <td><span class="badge b-missing">P1 — Critical</span></td>
+        <td>Fees</td>
+        <td>Build counter collection modal (student → fee heads → collect → receipt)</td>
+        <td>1 day</td>
+        <td>Core revenue workflow — backend is ready</td>
+      </tr>
+      <tr>
+        <td><span class="badge b-missing">P1 — Critical</span></td>
+        <td>Communications</td>
+        <td>Create full page with circular composer + AI rephrase + audience selector</td>
+        <td>1 day</td>
+        <td>Backend fully ready — zero frontend</td>
+      </tr>
+      <tr>
+        <td><span class="badge b-planned">P2 — High</span></td>
+        <td>Students</td>
+        <td>Add New Student form + detail view page</td>
+        <td>1 day</td>
+        <td>Core data entry — can't onboard students currently</td>
+      </tr>
+      <tr>
+        <td><span class="badge b-planned">P2 — High</span></td>
+        <td>Staff</td>
+        <td>Add staff attendance marking UI + add staff form</td>
+        <td>1 day</td>
+        <td>Backend ready, frontend missing the action</td>
+      </tr>
+      <tr>
+        <td><span class="badge b-planned">P2 — High</span></td>
+        <td>Library</td>
+        <td>Build full library page (catalog + issue + return + overdue)</td>
+        <td>1 day</td>
+        <td>Backend fully ready — zero frontend</td>
+      </tr>
+      <tr>
+        <td><span class="badge b-planned">P2 — High</span></td>
+        <td>Payroll</td>
+        <td>Build payroll run page + payslip list + salary structure editor</td>
+        <td>1 day</td>
+        <td>Backend fully ready — zero frontend</td>
+      </tr>
+      <tr>
+        <td><span class="badge b-planned">P2 — High</span></td>
+        <td>Reports</td>
+        <td>Replace UUID filter inputs with API-driven dropdowns + export buttons</td>
+        <td>4 hrs</td>
+        <td>UX — reports currently require knowing internal UUIDs</td>
+      </tr>
+      <tr>
+        <td><span class="badge b-ai">P3 — Enhancement</span></td>
+        <td>Dashboard</td>
+        <td>Add quick actions, recent activity feed, pending alerts</td>
+        <td>4 hrs</td>
+        <td>Makes dashboard a daily-use command center</td>
+      </tr>
+      <tr>
+        <td><span class="badge b-ai">P3 — Enhancement</span></td>
+        <td>Transport</td>
+        <td>Build transport page (routes, student assignment)</td>
+        <td>1 day</td>
+        <td>Backend ready — needed for schools with bus service</td>
+      </tr>
+      <tr>
+        <td><span class="badge b-ai">P4 — New AI</span></td>
+        <td>Fees</td>
+        <td>Bank statement CSV upload → AI reconciliation results UI</td>
+        <td>4 hrs</td>
+        <td>Unique AI differentiator — backend ready</td>
+      </tr>
+      <tr>
+        <td><span class="badge b-ai">P4 — New AI</span></td>
+        <td>Admissions</td>
+        <td>AI lead scoring display on enquiry list</td>
+        <td>1 day</td>
+        <td>No competitor has this</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ========== SIDEBAR NOTE ========== -->
+<div style="background:#1e293b;color:#e2e8f0;border-radius:20px;padding:28px 32px;margin-bottom:40px">
+  <h3 style="font-size:18px;font-weight:800;margin-bottom:16px;color:#fff">Sidebar — Navigation Items to Add</h3>
+  <p style="font-size:13px;color:#94a3b8;margin-bottom:16px">Current sidebar has 9 items. 4 backend modules have no nav entry:</p>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+    <div style="background:#334155;border-radius:10px;padding:14px;text-align:center">
+      <div style="font-size:24px;margin-bottom:6px">📢</div>
+      <p style="font-weight:700;font-size:13px">Communications</p>
+      <p style="font-size:11px;color:#94a3b8;margin-top:4px">Add /communications route + nav item</p>
+    </div>
+    <div style="background:#334155;border-radius:10px;padding:14px;text-align:center">
+      <div style="font-size:24px;margin-bottom:6px">📚</div>
+      <p style="font-weight:700;font-size:13px">Library</p>
+      <p style="font-size:11px;color:#94a3b8;margin-top:4px">Add /library route + nav item</p>
+    </div>
+    <div style="background:#334155;border-radius:10px;padding:14px;text-align:center">
+      <div style="font-size:24px;margin-bottom:6px">🚌</div>
+      <p style="font-weight:700;font-size:13px">Transport</p>
+      <p style="font-size:11px;color:#94a3b8;margin-top:4px">Add /transport route + nav item</p>
+    </div>
+    <div style="background:#334155;border-radius:10px;padding:14px;text-align:center">
+      <div style="font-size:24px;margin-bottom:6px">💵</div>
+      <p style="font-weight:700;font-size:13px">Payroll</p>
+      <p style="font-size:11px;color:#94a3b8;margin-top:4px">Add /payroll route + nav item</p>
+    </div>
+  </div>
+</div>
+
+</div><!-- end wrap -->
+
+<footer>
+  <p>School Management Platform — Module Status & Improvement Plan — May 2026</p>
+  <p style="margin-top:6px">14 Modules Covered · 4 Pages Missing · 10+ Critical UI Fixes · 50+ New Feature Items</p>
+</footer>
+</body>
+</html>

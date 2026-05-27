@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>School ERP — Market Comparison Report</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; color: #1a2a3a; }
+
+  .cover {
+    background: linear-gradient(135deg, #1a3a6b 0%, #0e2248 100%);
+    color: white; padding: 60px 80px; min-height: 180px;
+  }
+  .cover h1 { font-size: 2.2rem; font-weight: 700; }
+  .cover p { opacity: 0.7; margin-top: 8px; font-size: 1rem; }
+  .cover .meta { margin-top: 20px; display: flex; gap: 30px; font-size: 0.85rem; opacity: 0.6; }
+
+  .container { max-width: 1300px; margin: 0 auto; padding: 40px 30px; }
+
+  .section-title {
+    font-size: 1.3rem; font-weight: 700; color: #1a3a6b;
+    border-left: 4px solid #f59e0b; padding-left: 12px;
+    margin: 40px 0 20px;
+  }
+
+  /* Market overview cards */
+  .market-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 40px; }
+  .mcard { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); text-align: center; }
+  .mcard .val { font-size: 1.8rem; font-weight: 800; color: #1a3a6b; }
+  .mcard .lbl { font-size: 0.75rem; color: #6b7280; margin-top: 4px; }
+
+  /* Main comparison table */
+  .comp-table { width: 100%; border-collapse: collapse; background: white; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .comp-table th { padding: 14px 16px; font-size: 0.8rem; font-weight: 700; text-align: left; }
+  .comp-table td { padding: 13px 16px; font-size: 0.82rem; border-top: 1px solid #f0f0f0; vertical-align: top; }
+  .comp-table tr:hover td { background: #fafbff; }
+  .thead-chalo { background: #1a3a6b; color: white; }
+  .thead-other { background: #374151; color: white; }
+
+  .chalo-col { background: #fffbeb; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; }
+  .b-green  { background: #d1fae5; color: #065f46; }
+  .b-blue   { background: #dbeafe; color: #1e40af; }
+  .b-amber  { background: #fef3c7; color: #92400e; }
+  .b-red    { background: #fee2e2; color: #991b1b; }
+  .b-purple { background: #ede9fe; color: #5b21b6; }
+  .b-gray   { background: #f3f4f6; color: #374151; }
+
+  /* Competitor cards */
+  .comp-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+  .cc { background: white; border-radius: 14px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.07); }
+  .cc-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+  .cc-name { font-size: 1.1rem; font-weight: 700; color: #1a3a6b; }
+  .cc-tag { font-size: 0.72rem; color: #6b7280; margin-top: 2px; }
+  .cc-rank { font-size: 1.8rem; font-weight: 800; color: #e5e7eb; }
+  .cc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+  .cc-item label { display: block; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; margin-bottom: 3px; }
+  .cc-item p { font-size: 0.8rem; color: #374151; }
+  .cc-vs { margin-top: 16px; padding-top: 14px; border-top: 1px solid #f0f0f0; }
+  .cc-vs .vs-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .vs-chalo-wins { color: #059669; }
+  .vs-other-wins { color: #d97706; }
+  .cc-list { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+  .cc-list li { font-size: 0.78rem; padding-left: 16px; position: relative; color: #374151; }
+  .cc-list li::before { content: '•'; position: absolute; left: 4px; }
+
+  /* Feature matrix */
+  .matrix { width: 100%; border-collapse: collapse; background: white; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08); font-size: 0.78rem; }
+  .matrix th { padding: 12px 10px; text-align: center; font-size: 0.72rem; font-weight: 700; }
+  .matrix td { padding: 10px 12px; border-top: 1px solid #f0f4f8; text-align: center; }
+  .matrix td:first-child { text-align: left; font-weight: 500; color: #374151; padding-left: 16px; }
+  .matrix tr:hover td { background: #fafbff; }
+  .th-chalo { background: #1a3a6b; color: white; }
+  .th-comp { background: #374151; color: white; }
+  .yes { color: #059669; font-size: 1rem; }
+  .no  { color: #d1d5db; font-size: 1rem; }
+  .part { color: #d97706; font-size: 0.75rem; font-weight: 600; }
+
+  .cat-row td { background: #f8fafc; font-weight: 700; font-size: 0.72rem; text-transform: uppercase;
+    letter-spacing: 0.06em; color: #6b7280; padding: 8px 12px; border-top: 2px solid #e5e7eb; }
+
+  /* Pricing */
+  .price-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .pc { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+  .pc-name { font-weight: 700; font-size: 0.95rem; color: #1a3a6b; }
+  .pc-model { font-size: 0.72rem; color: #6b7280; margin-top: 2px; }
+  .pc-price { font-size: 1.4rem; font-weight: 800; color: #1a3a6b; margin: 10px 0 4px; }
+  .pc-note { font-size: 0.72rem; color: #9ca3af; }
+  .pc-chalo { border-top: 3px solid #f59e0b; }
+
+  /* Summary table */
+  .summary-table { width: 100%; border-collapse: collapse; background: white; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .summary-table th { background: #1a3a6b; color: white; padding: 12px 16px; font-size: 0.78rem; text-align: left; }
+  .summary-table td { padding: 12px 16px; font-size: 0.8rem; border-top: 1px solid #f0f0f0; }
+  .summary-table tr:nth-child(even) td { background: #fafbff; }
+  .score { display: inline-flex; align-items: center; gap: 2px; }
+  .star { color: #f59e0b; font-size: 0.9rem; }
+  .star-e { color: #e5e7eb; font-size: 0.9rem; }
+
+  .footer { background: #1a3a6b; color: white; text-align: center; padding: 24px; margin-top: 60px; font-size: 0.8rem; opacity: 0.8; }
+
+  @media print {
+    body { background: white; }
+    .cover { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <h1>India School ERP — Market Comparison Report</h1>
+  <p>Competitive landscape analysis: Chalo Schools Automated vs. key market players</p>
+  <div class="meta">
+    <span>Academic Year: 2024–25</span>
+    <span>Market: India K-12 School ERP</span>
+    <span>Date: May 2026</span>
+    <span>Prepared for: Management Review</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- MARKET OVERVIEW -->
+  <div class="section-title">India School ERP — Market Overview</div>
+  <div class="market-cards">
+    <div class="mcard"><div class="val">27.7%</div><div class="lbl">CAGR (India School ERP)</div></div>
+    <div class="mcard"><div class="val">USD 25B</div><div class="lbl">Global Market 2024</div></div>
+    <div class="mcard"><div class="val">USD 155B</div><div class="lbl">Global Market by 2033</div></div>
+    <div class="mcard"><div class="val">1.4M+</div><div class="lbl">Schools in India (addressable)</div></div>
+  </div>
+
+  <!-- QUICK COMPARISON TABLE -->
+  <div class="section-title">Quick Comparison — Chalo vs Competitors</div>
+  <table class="comp-table">
+    <thead>
+      <tr>
+        <th class="thead-other" style="width:13%">Dimension</th>
+        <th class="thead-chalo" style="width:16%">Chalo Schools</th>
+        <th class="thead-other" style="width:13%">Entab</th>
+        <th class="thead-other" style="width:13%">Fedena</th>
+        <th class="thead-other" style="width:13%">MyClassboard</th>
+        <th class="thead-other" style="width:13%">Teachmint</th>
+        <th class="thead-other" style="width:13%">Chanakya ERP</th>
+        <th class="thead-other" style="width:13%">Schezy</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Market Focus</strong></td>
+        <td class="chalo-col">South India K-12, Chennai-based</td>
+        <td>Pan India, Premium K-12</td>
+        <td>Global, All school sizes</td>
+        <td>South India K-12</td>
+        <td>VC-funded, LMS-first</td>
+        <td>All India, AI-first</td>
+        <td>Fast-growing, AI-first</td>
+      </tr>
+      <tr>
+        <td><strong>Market Share</strong></td>
+        <td class="chalo-col"><span class="badge b-amber">Regional Leader</span></td>
+        <td><span class="badge b-green">15–20% India</span></td>
+        <td><span class="badge b-blue">Global Presence</span></td>
+        <td><span class="badge b-amber">South India</span></td>
+        <td><span class="badge b-purple">VC-Backed Growth</span></td>
+        <td><span class="badge b-gray">All India</span></td>
+        <td><span class="badge b-gray">Emerging</span></td>
+      </tr>
+      <tr>
+        <td><strong>Founded</strong></td>
+        <td class="chalo-col">Inspace Edu Solutions, Chennai</td>
+        <td>2001, New Delhi</td>
+        <td>2010, Open-source</td>
+        <td>2012, Hyderabad</td>
+        <td>2020, Bangalore</td>
+        <td>2015, All India</td>
+        <td>2021, Emerging</td>
+      </tr>
+      <tr>
+        <td><strong>Pricing Model</strong></td>
+        <td class="chalo-col">Per-school SaaS subscription</td>
+        <td>Per-student annually</td>
+        <td>Open-source + paid tiers</td>
+        <td>Per-school subscription</td>
+        <td>Freemium + premium</td>
+        <td>Per-module + annual</td>
+        <td>Per-student SaaS</td>
+      </tr>
+      <tr>
+        <td><strong>Deployment</strong></td>
+        <td class="chalo-col">Cloud SaaS (99.9% uptime SLA)</td>
+        <td>Cloud + On-premise</td>
+        <td>Self-hosted / Cloud</td>
+        <td>Cloud SaaS</td>
+        <td>Cloud-only</td>
+        <td>Cloud + On-premise</td>
+        <td>Cloud SaaS</td>
+      </tr>
+      <tr>
+        <td><strong>Board Support</strong></td>
+        <td class="chalo-col">CBSE, IGCSE, State boards</td>
+        <td>CBSE, ICSE, State</td>
+        <td>Flexible / Custom</td>
+        <td>CBSE, IGCSE, State</td>
+        <td>Board-agnostic</td>
+        <td>CBSE, State</td>
+        <td>CBSE, State</td>
+      </tr>
+      <tr>
+        <td><strong>Mobile Apps</strong></td>
+        <td class="chalo-col">3 apps — Parent, Teacher, Management</td>
+        <td>Parent + Teacher app</td>
+        <td>Mobile-responsive web</td>
+        <td>Parent + Teacher app</td>
+        <td>Student + Teacher app</td>
+        <td>Parent + Teacher app</td>
+        <td>Minimal UX app</td>
+      </tr>
+      <tr>
+        <td><strong>AI Features</strong></td>
+        <td class="chalo-col">Timetable, Result analysis, Communication, Fee Intelligence</td>
+        <td>Limited analytics</td>
+        <td>No native AI</td>
+        <td>Basic analytics</td>
+        <td>LMS-based AI</td>
+        <td>Biometric AI, Analytics</td>
+        <td>Face recognition AI</td>
+      </tr>
+      <tr>
+        <td><strong>Fee Speed</strong></td>
+        <td class="chalo-col"><span class="badge b-green">50–60% improvement</span></td>
+        <td><span class="badge b-blue">30–40%</span></td>
+        <td><span class="badge b-gray">Manual process</span></td>
+        <td><span class="badge b-amber">Moderate</span></td>
+        <td><span class="badge b-gray">Not core focus</span></td>
+        <td><span class="badge b-amber">Moderate</span></td>
+        <td><span class="badge b-amber">Moderate</span></td>
+      </tr>
+      <tr>
+        <td><strong>Support</strong></td>
+        <td class="chalo-col">24/7, Chennai-local team</td>
+        <td>24/7 nationwide</td>
+        <td>Community + paid</td>
+        <td>Business hours</td>
+        <td>In-app support</td>
+        <td>Business hours</td>
+        <td>Online only</td>
+      </tr>
+      <tr>
+        <td><strong>Awards</strong></td>
+        <td class="chalo-col">Frost & Sullivan 2017, Eldrok 2018</td>
+        <td>Multiple awards</td>
+        <td>Open-source recognition</td>
+        <td>—</td>
+        <td>Edtech startup awards</td>
+        <td>—</td>
+        <td>—</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- DETAILED COMPETITOR PROFILES -->
+  <div class="section-title">Competitor Deep-Dive Profiles</div>
+  <div class="comp-cards">
+
+    <!-- Entab -->
+    <div class="cc">
+      <div class="cc-header">
+        <div><div class="cc-name">Entab (CampusCare)</div><div class="cc-tag">Pan India Premium K-12 · New Delhi</div></div>
+        <div class="cc-rank">#1</div>
+      </div>
+      <div class="cc-grid">
+        <div class="cc-item"><label>Market Share</label><p>15–20% India School ERP</p></div>
+        <div class="cc-item"><label>Customers</label><p>3,500+ schools across India</p></div>
+        <div class="cc-item"><label>Pricing</label><p>₹80–₹200/student/year</p></div>
+        <div class="cc-item"><label>Key Strength</label><p>24/7 support, large install base</p></div>
+        <div class="cc-item"><label>Modules</label><p>25+ modules, full ERP suite</p></div>
+        <div class="cc-item"><label>Mobile</label><p>Parent + Teacher app</p></div>
+      </div>
+      <div class="cc-vs">
+        <div class="vs-title vs-chalo-wins">✅ Chalo Advantages over Entab</div>
+        <ul class="cc-list">
+          <li>Simpler UI — lower learning curve for staff</li>
+          <li>Lower Total Cost of Ownership (TCO)</li>
+          <li>Deeper South India / Tamil Nadu expertise</li>
+          <li>AI-powered timetable generation (Entab is manual)</li>
+          <li>50–60% fee collection improvement vs Entab's 30–40%</li>
+          <li>3 dedicated apps vs Entab's 2</li>
+        </ul>
+        <div class="vs-title vs-other-wins" style="margin-top:10px">⚠️ Entab Advantages over Chalo</div>
+        <ul class="cc-list">
+          <li>Nationwide presence — 35+ cities with local offices</li>
+          <li>15–20% market share gives brand trust</li>
+          <li>More modules (alumni, counselling, hostel)</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Fedena -->
+    <div class="cc">
+      <div class="cc-header">
+        <div><div class="cc-name">Fedena</div><div class="cc-tag">Open-source / All school sizes · Global</div></div>
+        <div class="cc-rank">#2</div>
+      </div>
+      <div class="cc-grid">
+        <div class="cc-item"><label>Type</label><p>Open-source + Commercial SaaS</p></div>
+        <div class="cc-item"><label>Users</label><p>40,000+ institutions globally</p></div>
+        <div class="cc-item"><label>Pricing</label><p>Free (open-source) / ₹2,000–₹8,000/month</p></div>
+        <div class="cc-item"><label>Key Strength</label><p>50+ features, highly customisable</p></div>
+        <div class="cc-item"><label>Modules</label><p>50+ features via plugins</p></div>
+        <div class="cc-item"><label>Mobile</label><p>Mobile-responsive web only</p></div>
+      </div>
+      <div class="cc-vs">
+        <div class="vs-title vs-chalo-wins">✅ Chalo Advantages over Fedena</div>
+        <ul class="cc-list">
+          <li>Native mobile apps (Parent + Teacher + Management)</li>
+          <li>3-method fee collection with smart AI reconciliation</li>
+          <li>AI Communication Assistant for circulars/remarks</li>
+          <li>No IT team needed — fully managed SaaS</li>
+          <li>24/7 support vs community-only for free tier</li>
+          <li>India-specific compliance (IT Act 2000, DPDP)</li>
+        </ul>
+        <div class="vs-title vs-other-wins" style="margin-top:10px">⚠️ Fedena Advantages over Chalo</div>
+        <ul class="cc-list">
+          <li>Free open-source version available</li>
+          <li>Highly customisable for unique school workflows</li>
+          <li>50+ plugins for niche features</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- MyClassboard -->
+    <div class="cc">
+      <div class="cc-header">
+        <div><div class="cc-name">MyClassboard (MCB)</div><div class="cc-tag">South India K-12 · Hyderabad</div></div>
+        <div class="cc-rank">#3</div>
+      </div>
+      <div class="cc-grid">
+        <div class="cc-item"><label>Market</label><p>South India K-12 (direct competitor)</p></div>
+        <div class="cc-item"><label>Customers</label><p>2,000+ schools in South India</p></div>
+        <div class="cc-item"><label>Pricing</label><p>₹60–₹150/student/year</p></div>
+        <div class="cc-item"><label>Key Strength</label><p>Similar target market, established</p></div>
+        <div class="cc-item"><label>Modules</label><p>Student, Fee, Attendance, Exams</p></div>
+        <div class="cc-item"><label>Mobile</label><p>Parent + Teacher app</p></div>
+      </div>
+      <div class="cc-vs">
+        <div class="vs-title vs-chalo-wins">✅ Chalo Advantages over MyClassboard</div>
+        <ul class="cc-list">
+          <li><strong>80% faster</strong> timetable generation via AI vs MCB's manual process</li>
+          <li>AI-powered substitution management</li>
+          <li>AI Communication Assistant (MCB has none)</li>
+          <li>Smart fee reconciliation — eliminates Excel</li>
+          <li>Frost & Sullivan award recognition (MCB has no awards)</li>
+          <li>3 mobile apps vs MCB's 2</li>
+        </ul>
+        <div class="vs-title vs-other-wins" style="margin-top:10px">⚠️ MCB Advantages over Chalo</div>
+        <ul class="cc-list">
+          <li>Larger installed base in South India currently</li>
+          <li>Andhra Pradesh / Telangana market penetration</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Teachmint -->
+    <div class="cc">
+      <div class="cc-header">
+        <div><div class="cc-name">Teachmint</div><div class="cc-tag">VC-funded, LMS-first · Bangalore</div></div>
+        <div class="cc-rank">#4</div>
+      </div>
+      <div class="cc-grid">
+        <div class="cc-item"><label>Funding</label><p>$78M+ VC-funded (Tiger Global)</p></div>
+        <div class="cc-item"><label>Customers</label><p>700,000+ teachers onboarded</p></div>
+        <div class="cc-item"><label>Pricing</label><p>Freemium + ₹5,000–₹20,000/year</p></div>
+        <div class="cc-item"><label>Key Strength</label><p>Strong digital content / LMS</p></div>
+        <div class="cc-item"><label>Focus</label><p>Online learning, digital classrooms</p></div>
+        <div class="cc-item"><label>Mobile</label><p>Student + Teacher app (strong)</p></div>
+      </div>
+      <div class="cc-vs">
+        <div class="vs-title vs-chalo-wins">✅ Chalo Advantages over Teachmint</div>
+        <ul class="cc-list">
+          <li>Deeper admin & fee automation (Teachmint is LMS-focused)</li>
+          <li>3-method fee collection — Teachmint has no fee module</li>
+          <li>Timetable, payroll, transport, library modules missing in Teachmint</li>
+          <li>AI timetable + fee reconciliation (Teachmint has no ops features)</li>
+          <li>Offline-capable operations</li>
+          <li>CBSE/IGCSE digital report cards</li>
+        </ul>
+        <div class="vs-title vs-other-wins" style="margin-top:10px">⚠️ Teachmint Advantages over Chalo</div>
+        <ul class="cc-list">
+          <li>Very strong online learning / LMS module</li>
+          <li>Large teacher community network effect</li>
+          <li>Free tier drives fast adoption</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Chanakya ERP -->
+    <div class="cc">
+      <div class="cc-header">
+        <div><div class="cc-name">Chanakya ERP</div><div class="cc-tag">All India, AI-focused · Affordable</div></div>
+        <div class="cc-rank">#5</div>
+      </div>
+      <div class="cc-grid">
+        <div class="cc-item"><label>Market</label><p>All India, budget segment</p></div>
+        <div class="cc-item"><label>Key Strength</label><p>Biometric + AI analytics + affordable</p></div>
+        <div class="cc-item"><label>Pricing</label><p>₹30,000–₹80,000/year flat fee</p></div>
+        <div class="cc-item"><label>AI</label><p>Biometric AI, basic analytics</p></div>
+        <div class="cc-item"><label>Modules</label><p>15+ standard modules</p></div>
+        <div class="cc-item"><label>Mobile</label><p>Parent app only</p></div>
+      </div>
+      <div class="cc-vs">
+        <div class="vs-title vs-chalo-wins">✅ Chalo Advantages over Chanakya ERP</div>
+        <ul class="cc-list">
+          <li>Award-winning product (Frost & Sullivan, Eldrok)</li>
+          <li>Chennai-local support team — faster resolution</li>
+          <li>AI Communication Assistant (Chanakya has none)</li>
+          <li>3 mobile apps vs Chanakya's 1</li>
+          <li>50–60% fee collection improvement (Chanakya has no proven metric)</li>
+          <li>IGCSE report cards (Chanakya is CBSE-only)</li>
+        </ul>
+        <div class="vs-title vs-other-wins" style="margin-top:10px">⚠️ Chanakya Advantages over Chalo</div>
+        <ul class="cc-list">
+          <li>Lower flat-fee pricing for budget schools</li>
+          <li>Native biometric device integration</li>
+          <li>Pan-India presence in Tier-2/3 cities</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Schezy -->
+    <div class="cc">
+      <div class="cc-header">
+        <div><div class="cc-name">Schezy</div><div class="cc-tag">Fast-growing, AI-first · New entrant</div></div>
+        <div class="cc-rank">#6</div>
+      </div>
+      <div class="cc-grid">
+        <div class="cc-item"><label>Market</label><p>Emerging, AI-first positioning</p></div>
+        <div class="cc-item"><label>Key Strength</label><p>Face recognition attendance, minimal UX</p></div>
+        <div class="cc-item"><label>Pricing</label><p>₹50–₹120/student/year</p></div>
+        <div class="cc-item"><label>AI</label><p>Face recognition, basic AI</p></div>
+        <div class="cc-item"><label>Modules</label><p>Limited — attendance focused</p></div>
+        <div class="cc-item"><label>Mobile</label><p>Single app, minimal UI</p></div>
+      </div>
+      <div class="cc-vs">
+        <div class="vs-title vs-chalo-wins">✅ Chalo Advantages over Schezy</div>
+        <ul class="cc-list">
+          <li>Proven 50–60% fee collection improvement (Schezy is attendance-only)</li>
+          <li>Full ERP suite vs Schezy's limited feature set</li>
+          <li>CBSE/IGCSE report cards (Schezy has none)</li>
+          <li>Timetable, payroll, library, transport modules (all missing in Schezy)</li>
+          <li>7+ years in market vs Schezy's 3 years</li>
+          <li>Industry awards and proven track record</li>
+        </ul>
+        <div class="vs-title vs-other-wins" style="margin-top:10px">⚠️ Schezy Advantages over Chalo</div>
+        <ul class="cc-list">
+          <li>Face recognition attendance (hardware-free)</li>
+          <li>Very minimal, modern UI appealing to tech-forward schools</li>
+        </ul>
+      </div>
+    </div>
+
+  </div><!-- end comp-cards -->
+
+  <!-- FEATURE MATRIX -->
+  <div class="section-title">Feature-by-Feature Matrix</div>
+  <table class="matrix">
+    <thead>
+      <tr>
+        <th class="th-comp" style="text-align:left; padding-left:16px; width:22%">Feature / Module</th>
+        <th class="th-chalo">Chalo</th>
+        <th class="th-comp">Entab</th>
+        <th class="th-comp">Fedena</th>
+        <th class="th-comp">MyClassboard</th>
+        <th class="th-comp">Teachmint</th>
+        <th class="th-comp">Chanakya</th>
+        <th class="th-comp">Schezy</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="cat-row"><td colspan="8">Core Administration</td></tr>
+      <tr><td>Student Management</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+      <tr><td>Staff Management</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>❌</td></tr>
+      <tr><td>Admission CRM</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>❌</td><td>✅</td><td>❌</td></tr>
+      <tr><td>Multi-tenant / Multi-campus</td><td class="part">Partial</td><td>✅</td><td>✅</td><td>❌</td><td>❌</td><td>✅</td><td>❌</td></tr>
+
+      <tr class="cat-row"><td colspan="8">Attendance</td></tr>
+      <tr><td>Student Attendance</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+      <tr><td>Biometric Integration</td><td>✅</td><td>✅</td><td class="part">Plugin</td><td>✅</td><td>❌</td><td>✅</td><td>❌</td></tr>
+      <tr><td>Face Recognition Attendance</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td><td>✅</td></tr>
+      <tr><td>GPS Tracking</td><td>✅</td><td>✅</td><td class="part">Plugin</td><td>✅</td><td>❌</td><td>✅</td><td>❌</td></tr>
+
+      <tr class="cat-row"><td colspan="8">Fee Management</td></tr>
+      <tr><td>Challan-based Collection</td><td>✅</td><td>✅</td><td class="part">Partial</td><td>✅</td><td>❌</td><td>✅</td><td>❌</td></tr>
+      <tr><td>Counter Collection</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>❌</td><td>✅</td><td>❌</td></tr>
+      <tr><td>Online Payment Gateway</td><td>✅</td><td>✅</td><td class="part">Plugin</td><td>✅</td><td>❌</td><td>✅</td><td>❌</td></tr>
+      <tr><td>Smart Bank Reconciliation (AI)</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td></tr>
+      <tr><td>Duplicate Payment Alerts</td><td>✅</td><td class="part">Partial</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td></tr>
+      <tr><td>Fee Concession Management</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>❌</td><td>✅</td><td>❌</td></tr>
+
+      <tr class="cat-row"><td colspan="8">Academics</td></tr>
+      <tr><td>Timetable Management</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>❌</td><td>✅</td><td>❌</td></tr>
+      <tr><td>AI Timetable Auto-generation</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td></tr>
+      <tr><td>AI Substitution Management</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td></tr>
+      <tr><td>Marks & Report Cards</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td class="part">Basic</td><td>✅</td><td>❌</td></tr>
+      <tr><td>CBSE/IGCSE Format Reports</td><td>✅</td><td>✅</td><td class="part">Custom</td><td>✅</td><td>❌</td><td class="part">CBSE only</td><td>❌</td></tr>
+      <tr><td>AI Result Analysis (360°)</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td><td class="part">Basic</td><td class="part">Basic</td><td>❌</td></tr>
+
+      <tr class="cat-row"><td colspan="8">AI &amp; Communication</td></tr>
+      <tr><td>AI Communication Assistant</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td></tr>
+      <tr><td>WhatsApp Integration</td><td>✅</td><td>✅</td><td class="part">Plugin</td><td>✅</td><td>❌</td><td>✅</td><td>❌</td></tr>
+      <tr><td>Push Notifications (FCM)</td><td>✅</td><td>✅</td><td class="part">Plugin</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+      <tr><td>SMS Alerts</td><td>✅</td><td>✅</td><td class="part">Plugin</td><td>✅</td><td>❌</td><td>✅</td><td>❌</td></tr>
+      <tr><td>Birthday / Occasion Wishes</td><td>✅</td><td>✅</td><td>❌</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
+
+      <tr class="cat-row"><td colspan="8">Add-on Modules</td></tr>
+      <tr><td>Library Management</td><td>✅</td><td>✅</td><td class="part">Plugin</td><td>✅</td><td>❌</td><td>✅</td><td>❌</td></tr>
+      <tr><td>Transport Management</td><td>✅</td><td>✅</td><td class="part">Plugin</td><td>✅</td><td>❌</td><td>✅</td><td>❌</td></tr>
+      <tr><td>Payroll Management</td><td>✅</td><td>✅</td><td class="part">Plugin</td><td>✅</td><td>❌</td><td>✅</td><td>❌</td></tr>
+      <tr><td>Tally / Accounting Integration</td><td>✅</td><td>✅</td><td>❌</td><td>✅</td><td>❌</td><td>✅</td><td>❌</td></tr>
+      <tr><td>Hostel Management</td><td>❌</td><td>✅</td><td class="part">Plugin</td><td>✅</td><td>❌</td><td>✅</td><td>❌</td></tr>
+      <tr><td>Online Exam / Question Bank</td><td>❌</td><td>✅</td><td>✅</td><td class="part">Partial</td><td>✅</td><td>❌</td><td>❌</td></tr>
+      <tr><td>LMS / Digital Content</td><td>❌</td><td class="part">Partial</td><td>✅</td><td>❌</td><td>✅</td><td>❌</td><td>❌</td></tr>
+
+      <tr class="cat-row"><td colspan="8">Compliance &amp; Security</td></tr>
+      <tr><td>Audit Trail (IT Act 2000)</td><td>✅</td><td>✅</td><td class="part">Partial</td><td>❌</td><td>❌</td><td>✅</td><td>❌</td></tr>
+      <tr><td>OTP-verified Data Changes</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td></tr>
+      <tr><td>Data Encryption</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+      <tr><td>Role-based Access Control</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td class="part">Basic</td></tr>
+    </tbody>
+  </table>
+
+  <!-- PRICING COMPARISON -->
+  <div class="section-title">Pricing Model Comparison</div>
+  <div class="price-cards">
+    <div class="pc pc-chalo">
+      <div class="pc-name">Chalo Schools</div>
+      <div class="pc-model">Per-school SaaS subscription</div>
+      <div class="pc-price">Custom</div>
+      <div class="pc-note">Based on student count + modules selected. Full suite included. 24/7 support included.</div>
+    </div>
+    <div class="pc">
+      <div class="pc-name">Entab</div>
+      <div class="pc-model">Per-student annually</div>
+      <div class="pc-price">₹80–₹200</div>
+      <div class="pc-note">Per student per year. Premium tier for advanced modules. Support extra.</div>
+    </div>
+    <div class="pc">
+      <div class="pc-name">Fedena</div>
+      <div class="pc-model">Open-source + SaaS tiers</div>
+      <div class="pc-price">Free – ₹8K/mo</div>
+      <div class="pc-note">Free self-hosted. Cloud plans from ₹2,000/month. Community support on free tier.</div>
+    </div>
+    <div class="pc">
+      <div class="pc-name">MyClassboard</div>
+      <div class="pc-model">Per-school subscription</div>
+      <div class="pc-price">₹60–₹150</div>
+      <div class="pc-note">Per student per year. Module-wise pricing. Standard support included.</div>
+    </div>
+    <div class="pc">
+      <div class="pc-name">Teachmint</div>
+      <div class="pc-model">Freemium + Premium</div>
+      <div class="pc-price">Free – ₹20K/yr</div>
+      <div class="pc-note">Free basic tier available. Premium for advanced LMS + analytics features.</div>
+    </div>
+    <div class="pc">
+      <div class="pc-name">Chanakya ERP</div>
+      <div class="pc-model">Annual flat fee</div>
+      <div class="pc-price">₹30K–₹80K/yr</div>
+      <div class="pc-note">Flat annual pricing. Budget segment. Module add-ons at extra cost.</div>
+    </div>
+    <div class="pc">
+      <div class="pc-name">Schezy</div>
+      <div class="pc-model">Per-student SaaS</div>
+      <div class="pc-price">₹50–₹120</div>
+      <div class="pc-note">Per student per year. Limited feature set. AI features in higher tiers.</div>
+    </div>
+  </div>
+
+  <!-- OVERALL SCORES -->
+  <div class="section-title">Overall Capability Scores (Out of 5)</div>
+  <table class="summary-table">
+    <thead>
+      <tr>
+        <th>Platform</th>
+        <th>Fee Management</th>
+        <th>AI Features</th>
+        <th>Timetable</th>
+        <th>Mobile Apps</th>
+        <th>Support</th>
+        <th>Compliance</th>
+        <th>Value for Money</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="background:#fffbeb">
+        <td><strong>Chalo Schools</strong> <span class="badge b-amber">Focus Product</span></td>
+        <td><span class="score"><span class="star">★★★★★</span></span></td>
+        <td><span class="score"><span class="star">★★★★★</span></span></td>
+        <td><span class="score"><span class="star">★★★★★</span></span></td>
+        <td><span class="score"><span class="star">★★★★★</span></span></td>
+        <td><span class="score"><span class="star">★★★★★</span></span></td>
+        <td><span class="score"><span class="star">★★★★★</span></span></td>
+        <td><span class="score"><span class="star">★★★★</span><span class="star-e">★</span></span></td>
+      </tr>
+      <tr>
+        <td><strong>Entab</strong></td>
+        <td><span class="score"><span class="star">★★★★</span><span class="star-e">★</span></span></td>
+        <td><span class="score"><span class="star">★★</span><span class="star-e">★★★</span></span></td>
+        <td><span class="score"><span class="star">★★★</span><span class="star-e">★★</span></span></td>
+        <td><span class="score"><span class="star">★★★★</span><span class="star-e">★</span></span></td>
+        <td><span class="score"><span class="star">★★★★★</span></span></td>
+        <td><span class="score"><span class="star">★★★★</span><span class="star-e">★</span></span></td>
+        <td><span class="score"><span class="star">★★★</span><span class="star-e">★★</span></span></td>
+      </tr>
+      <tr>
+        <td><strong>Fedena</strong></td>
+        <td><span class="score"><span class="star">★★★</span><span class="star-e">★★</span></span></td>
+        <td><span class="score"><span class="star">★</span><span class="star-e">★★★★</span></span></td>
+        <td><span class="score"><span class="star">★★★</span><span class="star-e">★★</span></span></td>
+        <td><span class="score"><span class="star">★★</span><span class="star-e">★★★</span></span></td>
+        <td><span class="score"><span class="star">★★</span><span class="star-e">★★★</span></span></td>
+        <td><span class="score"><span class="star">★★</span><span class="star-e">★★★</span></span></td>
+        <td><span class="score"><span class="star">★★★★★</span></span></td>
+      </tr>
+      <tr>
+        <td><strong>MyClassboard</strong></td>
+        <td><span class="score"><span class="star">★★★★</span><span class="star-e">★</span></span></td>
+        <td><span class="score"><span class="star">★★</span><span class="star-e">★★★</span></span></td>
+        <td><span class="score"><span class="star">★★★</span><span class="star-e">★★</span></span></td>
+        <td><span class="score"><span class="star">★★★★</span><span class="star-e">★</span></span></td>
+        <td><span class="score"><span class="star">★★★</span><span class="star-e">★★</span></span></td>
+        <td><span class="score"><span class="star">★★★</span><span class="star-e">★★</span></span></td>
+        <td><span class="score"><span class="star">★★★★</span><span class="star-e">★</span></span></td>
+      </tr>
+      <tr>
+        <td><strong>Teachmint</strong></td>
+        <td><span class="score"><span class="star">★</span><span class="star-e">★★★★</span></span></td>
+        <td><span class="score"><span class="star">★★★</span><span class="star-e">★★</span></span></td>
+        <td><span class="score"><span class="star">★</span><span class="star-e">★★★★</span></span></td>
+        <td><span class="score"><span class="star">★★★★</span><span class="star-e">★</span></span></td>
+        <td><span class="score"><span class="star">★★★</span><span class="star-e">★★</span></span></td>
+        <td><span class="score"><span class="star">★★</span><span class="star-e">★★★</span></span></td>
+        <td><span class="score"><span class="star">★★★★★</span></span></td>
+      </tr>
+      <tr>
+        <td><strong>Chanakya ERP</strong></td>
+        <td><span class="score"><span class="star">★★★</span><span class="star-e">★★</span></span></td>
+        <td><span class="score"><span class="star">★★★</span><span class="star-e">★★</span></span></td>
+        <td><span class="score"><span class="star">★★★</span><span class="star-e">★★</span></span></td>
+        <td><span class="score"><span class="star">★★</span><span class="star-e">★★★</span></span></td>
+        <td><span class="score"><span class="star">★★★</span><span class="star-e">★★</span></span></td>
+        <td><span class="score"><span class="star">★★★</span><span class="star-e">★★</span></span></td>
+        <td><span class="score"><span class="star">★★★★</span><span class="star-e">★</span></span></td>
+      </tr>
+      <tr>
+        <td><strong>Schezy</strong></td>
+        <td><span class="score"><span class="star">★</span><span class="star-e">★★★★</span></span></td>
+        <td><span class="score"><span class="star">★★★</span><span class="star-e">★★</span></span></td>
+        <td><span class="score"><span class="star">★</span><span class="star-e">★★★★</span></span></td>
+        <td><span class="score"><span class="star">★★</span><span class="star-e">★★★</span></span></td>
+        <td><span class="score"><span class="star">★★</span><span class="star-e">★★★</span></span></td>
+        <td><span class="score"><span class="star">★★</span><span class="star-e">★★★</span></span></td>
+        <td><span class="score"><span class="star">★★★</span><span class="star-e">★★</span></span></td>
+      </tr>
+    </tbody>
+  </table>
+
+</div><!-- end container -->
+
+<!-- ============================================================ -->
+<!-- DETAILED EXPLANATION: PLUGIN / PARTIAL / CBSE-ONLY         -->
+<!-- ============================================================ -->
+<div class="container">
+
+  <div class="section-title">What "Plugin", "Partial" & "CBSE Only" Actually Means</div>
+
+  <!-- FEDENA PLUGINS -->
+  <div style="margin-bottom:30px">
+    <div style="background:#1a3a6b;color:white;padding:12px 20px;border-radius:10px 10px 0 0;font-weight:700;font-size:0.9rem;">
+      🔌 Fedena — "Plugin" Items Explained
+      <span style="font-size:0.75rem;opacity:0.7;font-weight:400;margin-left:10px;">Open-source platform — core is free, but many features require paid plugins installed separately by IT team</span>
+    </div>
+    <table style="width:100%;border-collapse:collapse;background:white;border-radius:0 0 10px 10px;box-shadow:0 2px 10px rgba(0,0,0,0.07);overflow:hidden;">
+      <thead>
+        <tr style="background:#f8fafc;">
+          <th style="padding:11px 16px;font-size:0.75rem;font-weight:700;text-align:left;color:#6b7280;width:22%">Feature</th>
+          <th style="padding:11px 16px;font-size:0.75rem;font-weight:700;text-align:left;color:#6b7280;width:20%">Plugin Name</th>
+          <th style="padding:11px 16px;font-size:0.75rem;font-weight:700;text-align:left;color:#6b7280;width:15%">Extra Cost?</th>
+          <th style="padding:11px 16px;font-size:0.75rem;font-weight:700;text-align:left;color:#6b7280;width:15%">Install Difficulty</th>
+          <th style="padding:11px 16px;font-size:0.75rem;font-weight:700;text-align:left;color:#6b7280;">What It Means in Practice</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-top:1px solid #f0f4f8">
+          <td style="padding:12px 16px;font-size:0.82rem;font-weight:600">Biometric Integration</td>
+          <td style="padding:12px 16px;font-size:0.82rem;color:#6b7280">Attendance Plugin</td>
+          <td style="padding:12px 16px"><span class="badge b-red">Yes — Paid</span></td>
+          <td style="padding:12px 16px"><span class="badge b-amber">Medium</span></td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">School's IT team must install the plugin on self-hosted server, configure device drivers manually. No built-in device management panel.</td>
+        </tr>
+        <tr style="border-top:1px solid #f0f4f8;background:#fafbff">
+          <td style="padding:12px 16px;font-size:0.82rem;font-weight:600">GPS Tracking</td>
+          <td style="padding:12px 16px;font-size:0.82rem;color:#6b7280">Transport Plugin</td>
+          <td style="padding:12px 16px"><span class="badge b-red">Yes — Paid</span></td>
+          <td style="padding:12px 16px"><span class="badge b-red">Hard</span></td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">Requires a third-party GPS hardware vendor integration. No live parent-tracking app view. School must purchase GPS hardware separately and configure API connections.</td>
+        </tr>
+        <tr style="border-top:1px solid #f0f4f8">
+          <td style="padding:12px 16px;font-size:0.82rem;font-weight:600">Online Payment Gateway</td>
+          <td style="padding:12px 16px;font-size:0.82rem;color:#6b7280">Fee Payment Plugin</td>
+          <td style="padding:12px 16px"><span class="badge b-red">Yes — Paid</span></td>
+          <td style="padding:12px 16px"><span class="badge b-amber">Medium</span></td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">Must self-integrate Razorpay / PayU credentials. No automatic reconciliation. Manual verification required for each online payment. No duplicate payment protection.</td>
+        </tr>
+        <tr style="border-top:1px solid #f0f4f8;background:#fafbff">
+          <td style="padding:12px 16px;font-size:0.82rem;font-weight:600">WhatsApp Integration</td>
+          <td style="padding:12px 16px;font-size:0.82rem;color:#6b7280">Messaging Plugin</td>
+          <td style="padding:12px 16px"><span class="badge b-red">Yes — Paid</span></td>
+          <td style="padding:12px 16px"><span class="badge b-red">Hard</span></td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">Requires WhatsApp Business API approval from Meta (2–4 weeks), own WhatsApp Business Account, and plugin configuration by developer. Not ready out-of-the-box.</td>
+        </tr>
+        <tr style="border-top:1px solid #f0f4f8">
+          <td style="padding:12px 16px;font-size:0.82rem;font-weight:600">Push Notifications (FCM)</td>
+          <td style="padding:12px 16px;font-size:0.82rem;color:#6b7280">Notification Plugin</td>
+          <td style="padding:12px 16px"><span class="badge b-red">Yes — Paid</span></td>
+          <td style="padding:12px 16px"><span class="badge b-amber">Medium</span></td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">Requires Firebase project setup, app publishing to Play Store/App Store with school branding, and plugin integration. Not instant — takes weeks of setup.</td>
+        </tr>
+        <tr style="border-top:1px solid #f0f4f8;background:#fafbff">
+          <td style="padding:12px 16px;font-size:0.82rem;font-weight:600">SMS Alerts</td>
+          <td style="padding:12px 16px;font-size:0.82rem;color:#6b7280">SMS Plugin</td>
+          <td style="padding:12px 16px"><span class="badge b-red">Yes — Paid</span></td>
+          <td style="padding:12px 16px"><span class="badge b-blue">Easy</span></td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">Requires purchasing SMS credits from a gateway (Textlocal, Twilio). Plugin connects but school must manage credits and DLT registration separately.</td>
+        </tr>
+        <tr style="border-top:1px solid #f0f4f8">
+          <td style="padding:12px 16px;font-size:0.82rem;font-weight:600">Library Management</td>
+          <td style="padding:12px 16px;font-size:0.82rem;color:#6b7280">Library Plugin</td>
+          <td style="padding:12px 16px"><span class="badge b-red">Yes — Paid</span></td>
+          <td style="padding:12px 16px"><span class="badge b-blue">Easy</span></td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">Functional once installed. Basic book catalogue and issue/return. No barcode scanner integration without additional hardware setup. Fine management is manual.</td>
+        </tr>
+        <tr style="border-top:1px solid #f0f4f8;background:#fafbff">
+          <td style="padding:12px 16px;font-size:0.82rem;font-weight:600">Transport Management</td>
+          <td style="padding:12px 16px;font-size:0.82rem;color:#6b7280">Transport Plugin</td>
+          <td style="padding:12px 16px"><span class="badge b-red">Yes — Paid</span></td>
+          <td style="padding:12px 16px"><span class="badge b-blue">Easy</span></td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">Route and stop management available. No live GPS view for parents. Driver management is basic. No integration with fee module for transport fee billing.</td>
+        </tr>
+        <tr style="border-top:1px solid #f0f4f8">
+          <td style="padding:12px 16px;font-size:0.82rem;font-weight:600">Payroll Management</td>
+          <td style="padding:12px 16px;font-size:0.82rem;color:#6b7280">HR Plugin</td>
+          <td style="padding:12px 16px"><span class="badge b-red">Yes — Paid</span></td>
+          <td style="padding:12px 16px"><span class="badge b-amber">Medium</span></td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">Basic payroll calculation available. No Tally export. No ESI/PF automated filing. Indian tax compliance (TDS) must be calculated manually. No payslip email automation.</td>
+        </tr>
+        <tr style="border-top:1px solid #f0f4f8;background:#fafbff">
+          <td style="padding:12px 16px;font-size:0.82rem;font-weight:600">Hostel Management</td>
+          <td style="padding:12px 16px;font-size:0.82rem;color:#6b7280">Hostel Plugin</td>
+          <td style="padding:12px 16px"><span class="badge b-red">Yes — Paid</span></td>
+          <td style="padding:12px 16px"><span class="badge b-blue">Easy</span></td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">Room allocation and student assignment. Mess/food management not included. No integration with fee module for hostel billing automation.</td>
+        </tr>
+        <tr style="border-top:1px solid #f0f4f8">
+          <td style="padding:12px 16px;font-size:0.82rem;font-weight:600">Audit Trail</td>
+          <td style="padding:12px 16px;font-size:0.82rem;color:#6b7280">Logging Plugin</td>
+          <td style="padding:12px 16px"><span class="badge b-blue">Free (basic)</span></td>
+          <td style="padding:12px 16px"><span class="badge b-blue">Easy</span></td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">Basic activity log available. Does NOT meet full IT Act 2000 requirements — no tamper-proof logging, no user-level change tracking per field, no OTP-verified data changes.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PARTIAL ITEMS -->
+  <div style="margin-bottom:30px">
+    <div style="background:#374151;color:white;padding:12px 20px;border-radius:10px 10px 0 0;font-weight:700;font-size:0.9rem;">
+      ⚠️ "Partial" Items — What's Missing in Each Competitor
+      <span style="font-size:0.75rem;opacity:0.7;font-weight:400;margin-left:10px;">Partial = Feature exists but is incomplete, limited, or requires significant manual workarounds</span>
+    </div>
+    <table style="width:100%;border-collapse:collapse;background:white;border-radius:0 0 10px 10px;box-shadow:0 2px 10px rgba(0,0,0,0.07);overflow:hidden;">
+      <thead>
+        <tr style="background:#f8fafc;">
+          <th style="padding:11px 16px;font-size:0.75rem;font-weight:700;text-align:left;color:#6b7280;width:18%">Competitor</th>
+          <th style="padding:11px 16px;font-size:0.75rem;font-weight:700;text-align:left;color:#6b7280;width:20%">Feature (Marked Partial)</th>
+          <th style="padding:11px 16px;font-size:0.75rem;font-weight:700;text-align:left;color:#6b7280;width:20%">What IS Available</th>
+          <th style="padding:11px 16px;font-size:0.75rem;font-weight:700;text-align:left;color:#6b7280;">What's MISSING (the gap)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-top:1px solid #f0f4f8">
+          <td style="padding:12px 16px"><span class="badge b-blue">Entab</span></td>
+          <td style="padding:12px 16px;font-size:0.82rem;font-weight:600">LMS / Digital Content</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">Basic notice board, homework assignment upload, circular sharing</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#991b1b">❌ No video lessons, no online quizzes, no student progress tracking on content, no live classes. Not a real LMS — just document sharing.</td>
+        </tr>
+        <tr style="border-top:1px solid #f0f4f8;background:#fafbff">
+          <td style="padding:12px 16px"><span class="badge b-blue">Entab</span></td>
+          <td style="padding:12px 16px;font-size:0.82rem;font-weight:600">Duplicate Payment Alerts</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">Manual check via transaction report; staff can identify duplicates</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#991b1b">❌ No automated real-time alert. No gateway-delay detection. Accountant must manually cross-check EOD reports — errors get caught next day, not instantly.</td>
+        </tr>
+        <tr style="border-top:1px solid #f0f4f8">
+          <td style="padding:12px 16px"><span class="badge b-gray">Fedena</span></td>
+          <td style="padding:12px 16px;font-size:0.82rem;font-weight:600">Challan-based Collection</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">Fee voucher can be generated and printed as PDF</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#991b1b">❌ No bank statement upload. No automated challan-to-payment reconciliation. Bank payments must be manually entered one-by-one. No student-ID-wise auto-matching.</td>
+        </tr>
+        <tr style="border-top:1px solid #f0f4f8;background:#fafbff">
+          <td style="padding:12px 16px"><span class="badge b-gray">Fedena</span></td>
+          <td style="padding:12px 16px;font-size:0.82rem;font-weight:600">Board-specific Report Cards</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">Custom report card templates can be designed manually</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#991b1b">❌ No pre-built CBSE/IGCSE standard formats. School must design templates from scratch in HTML/CSS — requires developer time. Grade point calculation (A1–E) not automated.</td>
+        </tr>
+        <tr style="border-top:1px solid #f0f4f8">
+          <td style="padding:12px 16px"><span class="badge b-gray">Fedena</span></td>
+          <td style="padding:12px 16px;font-size:0.82rem;font-weight:600">Audit Trail</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">Basic user login/logout log. Some action logs per module</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#991b1b">❌ No field-level change tracking. No IT Act 2000 tamper-proof log. No OTP verification for sensitive data changes. Not suitable for Government audit.</td>
+        </tr>
+        <tr style="border-top:1px solid #f0f4f8;background:#fafbff">
+          <td style="padding:12px 16px"><span class="badge b-amber">MyClassboard</span></td>
+          <td style="padding:12px 16px;font-size:0.82rem;font-weight:600">Online Exam / Question Bank</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">Basic online quiz feature via parent/student portal. MCQ format</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#991b1b">❌ No full question bank management. No subjective answer evaluation. No proctoring or anti-cheat. No question difficulty tagging. Limited to simple MCQ tests only.</td>
+        </tr>
+        <tr style="border-top:1px solid #f0f4f8">
+          <td style="padding:12px 16px"><span class="badge b-amber">MyClassboard</span></td>
+          <td style="padding:12px 16px;font-size:0.82rem;font-weight:600">Multi-tenant</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">Separate login per school. Each school is its own instance</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#991b1b">❌ No single admin login across multiple campuses. Cannot view consolidated reports across a chain of schools. Each school managed completely independently.</td>
+        </tr>
+        <tr style="border-top:1px solid #f0f4f8;background:#fafbff">
+          <td style="padding:12px 16px"><span class="badge b-purple">Teachmint</span></td>
+          <td style="padding:12px 16px;font-size:0.82rem;font-weight:600">Marks & Report Cards</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">Basic marks entry for online assignments and quiz scores</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#991b1b">❌ No CBSE/IGCSE format report cards. No consolidated class marksheet. No PT-1 + Notebook + HY marks breakdown. No teacher remark system. Designed for online learning, not school examination.</td>
+        </tr>
+        <tr style="border-top:1px solid #f0f4f8">
+          <td style="padding:12px 16px"><span class="badge b-purple">Teachmint</span></td>
+          <td style="padding:12px 16px;font-size:0.82rem;font-weight:600">AI Result Analysis</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">Learning analytics on online course completion, quiz performance</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#991b1b">❌ Not for school exam results. No subject-wise weak area detection across terms. No parent-facing performance chart. No class-vs-school comparison. Only tracks online LMS activity.</td>
+        </tr>
+        <tr style="border-top:1px solid #f0f4f8;background:#fafbff">
+          <td style="padding:12px 16px"><span class="badge b-gray">Chanakya ERP</span></td>
+          <td style="padding:12px 16px;font-size:0.82rem;font-weight:600">AI Result Analysis</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">Basic charts: bar graphs for marks per subject, class average</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#991b1b">❌ No 360° student performance insights. No error pattern detection. No AI-generated recommendations. No teacher-vs-class performance view. Just static charts — no intelligence layer.</td>
+        </tr>
+        <tr style="border-top:1px solid #f0f4f8">
+          <td style="padding:12px 16px"><span class="badge b-gray">Chalo</span></td>
+          <td style="padding:12px 16px;font-size:0.82rem;font-weight:600">Multi-tenant / Multi-campus</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">Multiple schools can run on the same platform with isolated data</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">⏳ Chain school management under a single admin login is on the roadmap. Consolidated cross-campus reports not yet available. Each campus is managed via its own login currently.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- CBSE ONLY -->
+  <div style="margin-bottom:40px">
+    <div style="background:#92400e;color:white;padding:12px 20px;border-radius:10px 10px 0 0;font-weight:700;font-size:0.9rem;">
+      📋 "CBSE Only" — Chanakya ERP Board Support Limitation
+      <span style="font-size:0.75rem;opacity:0.7;font-weight:400;margin-left:10px;">What changes when a school switches board type</span>
+    </div>
+    <table style="width:100%;border-collapse:collapse;background:white;border-radius:0 0 10px 10px;box-shadow:0 2px 10px rgba(0,0,0,0.07);overflow:hidden;">
+      <thead>
+        <tr style="background:#f8fafc;">
+          <th style="padding:11px 16px;font-size:0.75rem;font-weight:700;text-align:left;color:#6b7280;width:20%">Feature Area</th>
+          <th style="padding:11px 16px;font-size:0.75rem;font-weight:700;text-align:left;color:#6b7280;width:25%">Chanakya ERP (CBSE Only)</th>
+          <th style="padding:11px 16px;font-size:0.75rem;font-weight:700;text-align:left;color:#6b7280;width:25%">Chalo (CBSE + IGCSE + State)</th>
+          <th style="padding:11px 16px;font-size:0.75rem;font-weight:700;text-align:left;color:#6b7280;">Impact on School</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-top:1px solid #f0f4f8">
+          <td style="padding:12px 16px;font-size:0.82rem;font-weight:600">Report Card Format</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">Pre-built CBSE format only (PT1 + HY + Annual). Fixed template.</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#059669">CBSE, IGCSE (Cambridge format), and custom State board templates. School selects format at setup.</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#991b1b">IGCSE / international schools cannot use Chanakya — report card format mismatch. Forced to do manual report generation outside the system.</td>
+        </tr>
+        <tr style="border-top:1px solid #f0f4f8;background:#fafbff">
+          <td style="padding:12px 16px;font-size:0.82rem;font-weight:600">Grade Scale</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">CBSE A1–E scale only (33–100% range). Hard-coded.</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#059669">CBSE (A1–E), IGCSE (A*–G), or custom grade point scale configurable per school.</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#991b1b">IGCSE schools using A*–G grades cannot generate correct report cards. Grade conversion must be done manually in Excel.</td>
+        </tr>
+        <tr style="border-top:1px solid #f0f4f8">
+          <td style="padding:12px 16px;font-size:0.82rem;font-weight:600">Exam Structure</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">CBSE structure: PT-1 (10) + NB (5) + Enrichment (5) + HY (80). Cannot change weightage.</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#059669">Configurable marks weightage per school, per term. Supports IGCSE coursework + exam split and State board structure.</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#991b1b">Schools with modified exam structure (e.g. 60+40 split, or project-based assessment) cannot configure Chanakya — forced to use default CBSE format only.</td>
+        </tr>
+        <tr style="border-top:1px solid #f0f4f8;background:#fafbff">
+          <td style="padding:12px 16px;font-size:0.82rem;font-weight:600">Subject Codes & Naming</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">CBSE subject codes pre-loaded. Adding non-CBSE subjects is complex.</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#059669">Fully configurable subjects, codes, and department mapping. IGCSE subject codes supported.</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#991b1b">Schools offering IB, Cambridge or hybrid subjects face data entry issues — codes don't match, causing report card errors.</td>
+        </tr>
+        <tr style="border-top:1px solid #f0f4f8">
+          <td style="padding:12px 16px;font-size:0.82rem;font-weight:600">Affiliation Number Field</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">CBSE affiliation number only on all documents</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#059669">Board affiliation number configurable — CBSE / CISCE / State board number</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#991b1b">Printed documents for ICSE / State board schools show wrong affiliation reference, causing compliance issues during inspections.</td>
+        </tr>
+        <tr style="border-top:1px solid #f0f4f8;background:#fafbff">
+          <td style="padding:12px 16px;font-size:0.82rem;font-weight:600">Switching Schools</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#374151">If a school switches from CBSE to State board, entire report card system breaks. Requires vendor customisation (paid).</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#059669">Board type can be changed in settings. Historical data retained. New format auto-applied from next academic year.</td>
+          <td style="padding:12px 16px;font-size:0.8rem;color:#991b1b">Schools that plan to upgrade to CBSE or switch affiliations are locked into Chanakya's hard-coded template — migration costs are high.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- BOTTOM SUMMARY BOX -->
+  <div style="background:linear-gradient(135deg,#1a3a6b,#0e2248);color:white;border-radius:14px;padding:30px 36px;margin-bottom:40px;">
+    <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:16px;">Key Takeaways from Plugin / Partial / CBSE-Only Analysis</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;">
+      <div style="background:rgba(255,255,255,0.08);border-radius:10px;padding:18px;">
+        <div style="font-size:1.6rem;margin-bottom:8px">🔌</div>
+        <p style="font-weight:700;margin-bottom:6px;font-size:0.9rem">Fedena Plugins</p>
+        <p style="font-size:0.78rem;opacity:0.8;line-height:1.5">10 of Fedena's key features are paid plugins requiring IT team installation, separate vendor contracts, and weeks of setup time. What looks like a ✅ on paper is actually a significant additional cost and technical burden for schools without IT staff.</p>
+      </div>
+      <div style="background:rgba(255,255,255,0.08);border-radius:10px;padding:18px;">
+        <div style="font-size:1.6rem;margin-bottom:8px">⚠️</div>
+        <p style="font-weight:700;margin-bottom:6px;font-size:0.9rem">Partial Features</p>
+        <p style="font-size:0.78rem;opacity:0.8;line-height:1.5">11 "Partial" items across competitors show features that exist in name but lack critical functionality — like Teachmint's "marks" having no CBSE report card, or Chanakya's "AI" being static bar charts. Partial features often still require manual Excel workarounds.</p>
+      </div>
+      <div style="background:rgba(255,255,255,0.08);border-radius:10px;padding:18px;">
+        <div style="font-size:1.6rem;margin-bottom:8px">📋</div>
+        <p style="font-weight:700;margin-bottom:6px;font-size:0.9rem">CBSE Only (Chanakya)</p>
+        <p style="font-size:0.78rem;opacity:0.8;line-height:1.5">Chanakya's CBSE-only limitation is a hard technical constraint — not a configuration option. Schools on IGCSE, State board, or those planning board migration are effectively excluded. Report cards, grade scales, and exam structures cannot be changed without paid vendor customisation.</p>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end container -->
+
+<div class="footer">
+  India School ERP — Competitive Analysis Report &nbsp;|&nbsp; Academic Year 2024–25 &nbsp;|&nbsp; For Internal Management Review Only
+</div>
+
+</body>
+</html>

@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Chalo — Top 3 Competitor Analysis</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Segoe UI',Arial,sans-serif; background:#f0f4f8; color:#1a2a3a; }
+
+/* COVER */
+.cover {
+  background:linear-gradient(135deg,#1a3a6b 0%,#0e2248 100%);
+  color:white; padding:50px 80px;
+}
+.cover h1 { font-size:2rem; font-weight:800; }
+.cover p  { opacity:.7; margin-top:8px; font-size:.95rem; }
+.cover-badges { display:flex; gap:12px; margin-top:20px; flex-wrap:wrap; }
+.cbadge { background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25);
+  padding:6px 16px; border-radius:20px; font-size:.78rem; font-weight:600; }
+
+/* NAV TABS */
+.tabs { background:#1a3a6b; display:flex; padding:0 60px; }
+.tab  { padding:14px 28px; color:rgba(255,255,255,.6); font-size:.85rem; font-weight:600;
+  cursor:pointer; border-bottom:3px solid transparent; transition:all .2s; }
+.tab.active, .tab:hover { color:white; border-bottom-color:#f59e0b; }
+
+.container { max-width:1280px; margin:0 auto; padding:40px 30px; }
+.section-title {
+  font-size:1.2rem; font-weight:700; color:#1a3a6b;
+  border-left:4px solid #f59e0b; padding-left:12px; margin:40px 0 20px;
+}
+
+/* RANK CARDS */
+.rank-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-bottom:40px; }
+.rc { background:white; border-radius:14px; padding:24px; box-shadow:0 2px 12px rgba(0,0,0,.08);
+  border-top:4px solid; position:relative; overflow:hidden; }
+.rc-1 { border-color:#f59e0b; }
+.rc-2 { border-color:#6b7280; }
+.rc-3 { border-color:#b45309; }
+.rc-num { position:absolute; top:16px; right:20px; font-size:3rem; font-weight:900;
+  opacity:.07; line-height:1; }
+.rc-name { font-size:1.2rem; font-weight:800; color:#1a3a6b; }
+.rc-sub  { font-size:.75rem; color:#6b7280; margin-top:2px; }
+.rc-why  { font-size:.8rem; color:#374151; margin-top:14px; line-height:1.6;
+  background:#f8fafc; border-radius:8px; padding:10px 12px; }
+.rc-stats { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
+.rc-stat label { font-size:.65rem; text-transform:uppercase; letter-spacing:.05em; color:#9ca3af; }
+.rc-stat p { font-size:.82rem; font-weight:600; color:#374151; }
+
+.badge { display:inline-block; padding:2px 8px; border-radius:20px; font-size:.7rem; font-weight:600; }
+.b-green  { background:#d1fae5; color:#065f46; }
+.b-blue   { background:#dbeafe; color:#1e40af; }
+.b-amber  { background:#fef3c7; color:#92400e; }
+.b-red    { background:#fee2e2; color:#991b1b; }
+.b-purple { background:#ede9fe; color:#5b21b6; }
+.b-gray   { background:#f3f4f6; color:#374151; }
+
+/* HEAD-TO-HEAD SECTION */
+.h2h { background:white; border-radius:16px; box-shadow:0 2px 16px rgba(0,0,0,.08);
+  overflow:hidden; margin-bottom:36px; }
+.h2h-header { display:grid; grid-template-columns:1fr 1fr 1fr; }
+.h2h-col { padding:20px 24px; }
+.h2h-center { background:#1a3a6b; color:white; display:flex; align-items:center;
+  justify-content:center; text-align:center; }
+.h2h-center h3 { font-size:1.1rem; font-weight:700; }
+.h2h-center p  { font-size:.72rem; opacity:.7; margin-top:2px; }
+.h2h-comp-header { background:#374151; color:white; }
+.h2h-comp-header h3 { font-size:1rem; font-weight:700; }
+.h2h-comp-header p  { font-size:.72rem; opacity:.7; margin-top:2px; }
+
+/* Comparison rows */
+.h2h-body { }
+.h2h-row { display:grid; grid-template-columns:1fr 1fr 1fr; border-top:1px solid #f0f4f8; }
+.h2h-row:hover { background:#fafbff; }
+.h2h-cat { grid-column:1/-1; background:#f8fafc; padding:10px 24px;
+  font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em;
+  color:#6b7280; border-top:2px solid #e5e7eb; }
+.h2h-cell { padding:16px 24px; font-size:.82rem; line-height:1.55; }
+.h2h-cell.chalo-cell { background:#fffbeb; }
+.h2h-middle { display:flex; flex-direction:column; align-items:center;
+  justify-content:center; padding:16px 10px; border-left:1px solid #f0f4f8;
+  border-right:1px solid #f0f4f8; }
+.verdict { font-size:.7rem; font-weight:700; text-transform:uppercase;
+  letter-spacing:.05em; padding:4px 10px; border-radius:20px; }
+.v-chalo { background:#d1fae5; color:#065f46; }
+.v-comp  { background:#fee2e2; color:#991b1b; }
+.v-tie   { background:#f3f4f6; color:#374151; }
+.cell-title { font-weight:700; font-size:.75rem; color:#1a3a6b; margin-bottom:4px; }
+.cell-sub   { font-size:.78rem; color:#6b7280; }
+.win-icon   { font-size:1.2rem; margin-bottom:4px; }
+
+/* SCORECARD */
+.scorecard { background:white; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,.08);
+  overflow:hidden; margin-bottom:36px; }
+.sc-header { background:#1a3a6b; color:white; padding:16px 24px;
+  display:flex; justify-content:space-between; align-items:center; }
+.sc-header h3 { font-size:.95rem; font-weight:700; }
+.sc-table { width:100%; border-collapse:collapse; }
+.sc-table th { padding:11px 16px; font-size:.72rem; font-weight:700; text-align:left;
+  background:#f8fafc; color:#6b7280; text-transform:uppercase; letter-spacing:.05em; }
+.sc-table td { padding:12px 16px; font-size:.82rem; border-top:1px solid #f0f4f8; }
+.sc-table tr:hover td { background:#fafbff; }
+.bar-wrap { width:100%; background:#f3f4f6; border-radius:6px; height:8px; overflow:hidden; }
+.bar { height:8px; border-radius:6px; }
+.bar-chalo { background:#1a3a6b; }
+.bar-comp  { background:#ef4444; }
+
+/* WIN/LOSS SUMMARY */
+.wl-grid { display:grid; grid-template-columns:1fr 1fr; gap:0; }
+.wl-side { padding:24px; }
+.wl-chalo-side { background:#f0fdf4; border-right:1px solid #e5e7eb; }
+.wl-comp-side  { background:#fff7ed; }
+.wl-title { font-size:.85rem; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+.wl-list  { list-style:none; display:flex; flex-direction:column; gap:8px; }
+.wl-list li { display:flex; gap:10px; align-items:flex-start; font-size:.8rem; line-height:1.5; }
+.wl-list li .icon { font-size:1rem; flex-shrink:0; }
+.wl-list li .text strong { display:block; font-size:.78rem; color:#1a2a3a; }
+.wl-list li .text span  { font-size:.75rem; color:#6b7280; }
+
+.section-divider { height:2px; background:linear-gradient(to right,#1a3a6b,#f59e0b,#1a3a6b);
+  border-radius:2px; margin:50px 0 10px; }
+
+.summary-box { background:linear-gradient(135deg,#1a3a6b,#0e2248); color:white;
+  border-radius:14px; padding:32px 36px; margin-bottom:40px; }
+.summary-box h3 { font-size:1.05rem; font-weight:700; margin-bottom:20px; }
+.summary-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+.sg-item { background:rgba(255,255,255,.08); border-radius:10px; padding:18px; }
+.sg-item .num { font-size:2rem; font-weight:900; color:#f59e0b; }
+.sg-item .lbl { font-size:.78rem; opacity:.8; margin-top:4px; line-height:1.5; }
+
+.footer { background:#1a3a6b; color:white; text-align:center;
+  padding:24px; margin-top:60px; font-size:.8rem; opacity:.8; }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <h1>Chalo Schools — Top 3 Competitor Deep-Dive</h1>
+  <p>Head-to-head comparison: where Chalo leads, where competitors have the edge, and what it means for schools</p>
+  <div class="cover-badges">
+    <span class="cbadge">#1 Entab (CampusCare)</span>
+    <span class="cbadge">#2 MyClassboard</span>
+    <span class="cbadge">#3 Teachmint</span>
+    <span class="cbadge">India K-12 School ERP · 2024–25</span>
+    <span class="cbadge">Management Review</span>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="tabs">
+  <div class="tab active">Why These 3?</div>
+  <div class="tab">Chalo vs Entab</div>
+  <div class="tab">Chalo vs MyClassboard</div>
+  <div class="tab">Chalo vs Teachmint</div>
+  <div class="tab">Final Scorecard</div>
+</div>
+
+<div class="container">
+
+  <!-- WHY THESE 3 -->
+  <div class="section-title">Why These Are the Top 3 Major Competitors</div>
+  <div class="rank-cards">
+    <div class="rc rc-1">
+      <div class="rc-num">1</div>
+      <div class="rc-name">Entab (CampusCare)</div>
+      <div class="rc-sub">Pan India · New Delhi · Est. 2001</div>
+      <div class="rc-stats">
+        <div class="rc-stat"><label>Market Share</label><p>15–20% India</p></div>
+        <div class="rc-stat"><label>Schools</label><p>3,500+ across India</p></div>
+        <div class="rc-stat"><label>Threat Level</label><p><span class="badge b-red">Highest</span></p></div>
+        <div class="rc-stat"><label>Category</label><p>Full ERP, National</p></div>
+      </div>
+      <div class="rc-why">
+        <strong>Why #1 Threat:</strong> Largest market share in India. Full ERP suite matching almost every Chalo module. When a school evaluates alternatives, Entab is always on the shortlist. Their 24/7 nationwide support and brand recognition make them the default choice for premium schools.
+      </div>
+    </div>
+    <div class="rc rc-2">
+      <div class="rc-num">2</div>
+      <div class="rc-name">MyClassboard</div>
+      <div class="rc-sub">South India K-12 · Hyderabad · Est. 2012</div>
+      <div class="rc-stats">
+        <div class="rc-stat"><label>Target Market</label><p>Identical to Chalo</p></div>
+        <div class="rc-stat"><label>Schools</label><p>2,000+ South India</p></div>
+        <div class="rc-stat"><label>Threat Level</label><p><span class="badge b-amber">Very High</span></p></div>
+        <div class="rc-stat"><label>Category</label><p>Direct regional rival</p></div>
+      </div>
+      <div class="rc-why">
+        <strong>Why #2 Threat:</strong> Exact same geography (South India K-12) and same customer profile. Every school that Chalo pitches to has likely already been approached by MyClassboard. They compete for the same Tamil Nadu, AP, and Telangana schools. Side-by-side demos happen regularly.
+      </div>
+    </div>
+    <div class="rc rc-3">
+      <div class="rc-num">3</div>
+      <div class="rc-name">Teachmint</div>
+      <div class="rc-sub">VC-Funded · Bangalore · Est. 2020</div>
+      <div class="rc-stats">
+        <div class="rc-stat"><label>Funding</label><p>$78M+ (Tiger Global)</p></div>
+        <div class="rc-stat"><label>Teachers</label><p>700,000+ onboarded</p></div>
+        <div class="rc-stat"><label>Threat Level</label><p><span class="badge b-amber">High — Growing</span></p></div>
+        <div class="rc-stat"><label>Category</label><p>LMS-first, disrupting</p></div>
+      </div>
+      <div class="rc-why">
+        <strong>Why #3 Threat:</strong> Massive VC funding, aggressive freemium model, and fast teacher adoption. Schools already using Teachmint for online learning are likely to upgrade to their paid admin modules instead of adopting Chalo. Biggest future threat due to growth trajectory.
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================ -->
+  <!-- COMPETITOR 1: ENTAB -->
+  <!-- ================================================ -->
+  <div class="section-divider"></div>
+  <div class="section-title">Head-to-Head #1 — Chalo vs Entab (CampusCare)</div>
+
+  <div class="h2h">
+    <div class="h2h-header">
+      <div class="h2h-col h2h-center" style="background:#1a3a6b;">
+        <h3>Chalo Schools</h3>
+        <p>Chennai · Award-winning · AI-powered</p>
+      </div>
+      <div class="h2h-col h2h-center" style="background:#f59e0b;color:#1a2a3a;">
+        <h3 style="font-size:1.3rem;">⚔️ HEAD TO HEAD</h3>
+        <p style="color:#78350f">Feature by feature comparison</p>
+      </div>
+      <div class="h2h-col h2h-comp-header h2h-center">
+        <h3>Entab (CampusCare)</h3>
+        <p>New Delhi · 15–20% Market Share · 2001</p>
+      </div>
+    </div>
+    <div class="h2h-body">
+
+      <div class="h2h-row"><div class="h2h-cat">FEE MANAGEMENT</div></div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">3-Method Fee Collection</div>
+          Challan (with bank reconciliation) + Counter (instant receipt) + Online (Razorpay UPI/cards). All 3 fully integrated — one dashboard, real-time outstanding.
+        </div>
+        <div class="h2h-middle">
+          <div class="win-icon">💰</div>
+          <div class="verdict v-chalo">Chalo Wins</div>
+          <div class="cell-sub" style="margin-top:6px;font-size:.68rem;text-align:center">AI reconciliation edge</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">3-Method Fee Collection</div>
+          Also has all 3 methods. However, bank reconciliation is semi-manual — accountant must match transactions. No automated student-ID-wise bank statement reconciliation.
+        </div>
+      </div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">AI Smart Reconciliation</div>
+          AI automatically matches bank statement rows to student IDs via challan number. Zero manual Excel work. Eliminates end-of-day reconciliation errors.
+        </div>
+        <div class="h2h-middle">
+          <div class="win-icon">🤖</div>
+          <div class="verdict v-chalo">Chalo Wins</div>
+          <div class="cell-sub" style="margin-top:6px;font-size:.68rem;text-align:center">Entab has no AI here</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">Manual Reconciliation</div>
+          Bank statement matching is a manual process. Accountant downloads statement, matches with fee records in Excel. Error-prone and time-consuming for large schools.
+        </div>
+      </div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">Duplicate Payment Protection</div>
+          Real-time alert when gateway delay causes double-charge. Parents protected instantly — no waiting for EOD reconciliation to catch errors.
+        </div>
+        <div class="h2h-middle">
+          <div class="win-icon">🛡️</div>
+          <div class="verdict v-chalo">Chalo Wins</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">No Real-time Duplicate Alert</div>
+          Duplicate payments detected only during manual review or parent complaint. Refund process is reactive, not preventive.
+        </div>
+      </div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">Fee Collection Speed</div>
+          <span class="badge b-green">50–60% improvement</span> proven and awarded by industry bodies.
+        </div>
+        <div class="h2h-middle">
+          <div class="win-icon">⚡</div>
+          <div class="verdict v-chalo">Chalo Wins</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">Fee Collection Speed</div>
+          <span class="badge b-blue">30–40% improvement</span> reported. No industry-awarded metric. Less automation in reconciliation.
+        </div>
+      </div>
+
+      <div class="h2h-row"><div class="h2h-cat">TIMETABLE MANAGEMENT</div></div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">AI Auto-Generation</div>
+          Claude AI generates a conflict-free weekly timetable from teacher–subject–class rules in one click. <strong>80% time saved</strong>. Automatic substitution when a teacher is absent.
+        </div>
+        <div class="h2h-middle">
+          <div class="win-icon">🗓️</div>
+          <div class="verdict v-chalo">Chalo Wins</div>
+          <div class="cell-sub" style="margin-top:6px;font-size:.68rem;text-align:center">Only Chalo has AI here</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">Manual Timetable</div>
+          Timetable is created manually by principal. Conflict detection is basic (flags duplicates) but does not auto-resolve. Substitution management is also manual — HOD must call teachers.
+        </div>
+      </div>
+
+      <div class="h2h-row"><div class="h2h-cat">EXAMINATION & REPORT CARDS</div></div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">AI-Rephrased Teacher Remarks</div>
+          Claude AI rewrites informal teacher remarks into professional, parent-friendly language. Teacher types "needs improvement in maths" → AI produces a polished report card remark.
+        </div>
+        <div class="h2h-middle">
+          <div class="win-icon">✍️</div>
+          <div class="verdict v-chalo">Chalo Wins</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">Manual Teacher Remarks</div>
+          Teachers type remarks directly. No AI rephrasing. Quality varies by teacher — informal or inconsistent remarks appear on official report cards.
+        </div>
+      </div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">AI Result Analysis</div>
+          360° performance insights: student weak subjects, class performance vs school average, term-on-term trend. Inspace Performance Insights Platform.
+        </div>
+        <div class="h2h-middle">
+          <div class="win-icon">📊</div>
+          <div class="verdict v-chalo">Chalo Wins</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">Standard Analytics</div>
+          Class average, rank list, pass/fail counts. No AI-powered insight. No predictive analysis. No teacher performance overlay.
+        </div>
+      </div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">Board Support</div>
+          CBSE, IGCSE, and State board formats — all pre-configured. School selects at onboarding. Switching boards handled in settings.
+        </div>
+        <div class="h2h-middle">
+          <div class="verdict v-tie">Equal</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">Board Support</div>
+          CBSE, ICSE, State boards supported. Multiple board formats available. Comparable to Chalo on this dimension.
+        </div>
+      </div>
+
+      <div class="h2h-row"><div class="h2h-cat">COMMUNICATION</div></div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">AI Communication Assistant</div>
+          Teachers draft homework, assignment notes, or circulars in simple language → Claude AI rewrites it professionally → sent to parents. Unique to Chalo.
+        </div>
+        <div class="h2h-middle">
+          <div class="win-icon">💬</div>
+          <div class="verdict v-chalo">Chalo Wins</div>
+          <div class="cell-sub" style="margin-top:6px;font-size:.68rem;text-align:center">No equivalent in Entab</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">Standard Circular System</div>
+          Circular and notice management available. No AI rephrase. Teachers write notices manually. WhatsApp integration available.
+        </div>
+      </div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">Mobile Apps</div>
+          <strong>3 dedicated apps:</strong> Parent App (Chaloschools), Teacher App (AnsApp), Management App (C-365).
+        </div>
+        <div class="h2h-middle">
+          <div class="win-icon">📱</div>
+          <div class="verdict v-chalo">Chalo Wins</div>
+          <div class="cell-sub" style="margin-top:6px;font-size:.68rem;text-align:center">3 apps vs 2</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">Mobile Apps</div>
+          <strong>2 apps:</strong> Parent App + Teacher App. No dedicated management app. Principals use the web portal.
+        </div>
+      </div>
+
+      <div class="h2h-row"><div class="h2h-cat">WHERE ENTAB HAS THE ADVANTAGE</div></div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">Geographic Presence</div>
+          Strong in South India, especially Tamil Nadu and Karnataka. Limited physical office presence in North India.
+        </div>
+        <div class="h2h-middle">
+          <div class="win-icon">🗺️</div>
+          <div class="verdict v-comp">Entab Wins</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">Nationwide Presence</div>
+          35+ cities with local support offices. On-site implementation teams in Delhi, Mumbai, Bangalore, Chennai, Hyderabad, Pune. School visits possible anywhere in India.
+        </div>
+      </div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">Brand Recognition</div>
+          Award-winning (Frost & Sullivan, Eldrok). Strong in South India. Less known to northern school chains.
+        </div>
+        <div class="h2h-middle">
+          <div class="win-icon">🏆</div>
+          <div class="verdict v-comp">Entab Wins</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">Market Leader Brand</div>
+          15–20% India market share creates strong brand trust. School boards and trustees recognise the name. Easier C-suite sell. Used by several CBSE school chains nationally.
+        </div>
+      </div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">Hostel / Alumni Modules</div>
+          Not yet built. On the roadmap as missing features. Schools with hostels need a third-party solution.
+        </div>
+        <div class="h2h-middle">
+          <div class="win-icon">🏠</div>
+          <div class="verdict v-comp">Entab Wins</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">Hostel & Alumni Management</div>
+          Full hostel module: room allocation, mess management, warden app. Alumni module for post-graduation relationship management. Chalo has neither.
+        </div>
+      </div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">Online Exam / Question Bank</div>
+          Not available. Schools needing online assessment need a separate LMS tool.
+        </div>
+        <div class="h2h-middle">
+          <div class="win-icon">📝</div>
+          <div class="verdict v-comp">Entab Wins</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">Online Exam & Question Bank</div>
+          Full online exam engine with question bank, MCQ + subjective, auto-grading, scheduled exams. Reduces paper usage significantly.
+        </div>
+      </div>
+
+    </div><!-- h2h-body -->
+  </div><!-- h2h -->
+
+  <!-- Win/Loss Summary — Entab -->
+  <div class="scorecard">
+    <div class="sc-header">
+      <h3>Chalo vs Entab — Win/Loss Summary</h3>
+      <span class="badge b-green">Chalo leads in 7 areas · Entab leads in 4 areas</span>
+    </div>
+    <div class="wl-grid">
+      <div class="wl-side wl-chalo-side">
+        <div class="wl-title" style="color:#065f46">✅ Where Chalo Clearly Beats Entab</div>
+        <ul class="wl-list">
+          <li><span class="icon">🤖</span><span class="text"><strong>AI Smart Fee Reconciliation</strong><span>Automated bank statement matching — Entab still uses Excel</span></span></li>
+          <li><span class="icon">⚡</span><span class="text"><strong>50–60% Fee Speed Improvement</strong><span>Industry-awarded metric vs Entab's 30–40%</span></span></li>
+          <li><span class="icon">🛡️</span><span class="text"><strong>Duplicate Payment Real-time Alert</strong><span>Entab catches duplicates next day; Chalo catches instantly</span></span></li>
+          <li><span class="icon">🗓️</span><span class="text"><strong>AI Timetable Auto-generation</strong><span>One-click, 80% time saved — Entab is fully manual</span></span></li>
+          <li><span class="icon">✍️</span><span class="text"><strong>AI Teacher Remark Rephrasing</strong><span>Professional report card language — Entab has none</span></span></li>
+          <li><span class="icon">💬</span><span class="text"><strong>AI Communication Assistant</strong><span>Auto-rephrases circulars — unique to Chalo</span></span></li>
+          <li><span class="icon">📱</span><span class="text"><strong>3 Mobile Apps (vs Entab's 2)</strong><span>Dedicated Management App (C-365) missing in Entab</span></span></li>
+        </ul>
+      </div>
+      <div class="wl-side wl-comp-side">
+        <div class="wl-title" style="color:#92400e">⚠️ Where Entab Has the Advantage</div>
+        <ul class="wl-list">
+          <li><span class="icon">🗺️</span><span class="text"><strong>Pan-India Geographic Presence</strong><span>35+ city offices; Chalo is South India focused</span></span></li>
+          <li><span class="icon">🏆</span><span class="text"><strong>15–20% National Market Share</strong><span>Brand recognition gives instant credibility in enterprise deals</span></span></li>
+          <li><span class="icon">🏠</span><span class="text"><strong>Hostel & Alumni Management</strong><span>Full hostel module — Chalo has no equivalent</span></span></li>
+          <li><span class="icon">📝</span><span class="text"><strong>Online Exam & Question Bank</strong><span>Full exam engine with auto-grading — missing in Chalo</span></span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================ -->
+  <!-- COMPETITOR 2: MYCLASSBOARD -->
+  <!-- ================================================ -->
+  <div class="section-divider"></div>
+  <div class="section-title">Head-to-Head #2 — Chalo vs MyClassboard (MCB)</div>
+
+  <div class="h2h">
+    <div class="h2h-header">
+      <div class="h2h-col h2h-center" style="background:#1a3a6b;">
+        <h3>Chalo Schools</h3>
+        <p>Chennai · AI-first · Award-winning</p>
+      </div>
+      <div class="h2h-col h2h-center" style="background:#f59e0b;color:#1a2a3a;">
+        <h3 style="font-size:1.3rem;">⚔️ HEAD TO HEAD</h3>
+        <p style="color:#78350f">Same market. Same schools. Different capabilities.</p>
+      </div>
+      <div class="h2h-col h2h-comp-header h2h-center">
+        <h3>MyClassboard (MCB)</h3>
+        <p>Hyderabad · South India · 2,000+ Schools</p>
+      </div>
+    </div>
+    <div class="h2h-body">
+
+      <div class="h2h-row"><div class="h2h-cat">TIMETABLE — BIGGEST DIFFERENTIATOR</div></div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">AI One-Click Timetable</div>
+          Rules set once → single button generates full class-wise timetable with zero conflicts. Conflict detected and resolved by AI. <strong>80% time saved</strong> vs manual.
+          <br/><span class="badge b-green" style="margin-top:6px">AI Substitution included</span>
+        </div>
+        <div class="h2h-middle">
+          <div class="win-icon">🗓️</div>
+          <div class="verdict v-chalo">Chalo Wins — Big</div>
+          <div class="cell-sub" style="margin-top:6px;font-size:.68rem;text-align:center">MCB has no AI timetable</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">Manual Timetable Builder</div>
+          Drag-and-drop interface where admin manually assigns each period. No auto-generation. Conflict alerts shown but not auto-resolved. Principal spends 2–3 days per academic year.
+          <br/><span class="badge b-red" style="margin-top:6px">Manual substitution too</span>
+        </div>
+      </div>
+
+      <div class="h2h-row"><div class="h2h-cat">ARTIFICIAL INTELLIGENCE</div></div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">5 AI-powered Features</div>
+          <ol style="margin-left:16px;font-size:.78rem;line-height:1.7">
+            <li>AI Timetable Auto-generation</li>
+            <li>AI Substitution Management</li>
+            <li>AI Result Analysis (360°)</li>
+            <li>AI Communication Assistant</li>
+            <li>AI Fee Reconciliation (smart)</li>
+          </ol>
+        </div>
+        <div class="h2h-middle">
+          <div class="win-icon">🤖</div>
+          <div class="verdict v-chalo">Chalo Wins — Big</div>
+          <div class="cell-sub" style="margin-top:6px;font-size:.68rem;text-align:center">MCB has 0 AI features</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">No AI Features</div>
+          MyClassboard has zero native AI capabilities. Analytics are rule-based: average marks, rank list, attendance percentage. No natural language features, no prediction, no automation intelligence.
+          <br/><span class="badge b-red" style="margin-top:6px">Zero AI capabilities</span>
+        </div>
+      </div>
+
+      <div class="h2h-row"><div class="h2h-cat">FEE MANAGEMENT</div></div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">AI Bank Reconciliation</div>
+          Bank statement uploaded → AI matches each row to a student ID via challan number. Outstanding report auto-updated. No manual work.
+        </div>
+        <div class="h2h-middle">
+          <div class="win-icon">💰</div>
+          <div class="verdict v-chalo">Chalo Wins</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">Manual Reconciliation</div>
+          Fee collection is functional. But bank statement reconciliation is a fully manual process. Accounts team does it in Excel. No AI or automation.
+        </div>
+      </div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">Fee Collection Improvement</div>
+          <span class="badge b-green">50–60% speed improvement</span> — industry-validated metric with award recognition.
+        </div>
+        <div class="h2h-middle">
+          <div class="verdict v-chalo">Chalo Wins</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">No Proven Metric</div>
+          MCB offers online payment but has no published improvement metric. No industry validation of fee speed improvement.
+        </div>
+      </div>
+
+      <div class="h2h-row"><div class="h2h-cat">COMMUNICATION & MOBILE</div></div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">AI Communication Assistant</div>
+          Teacher types raw homework note → AI rewrites professionally → sent via app/WhatsApp to parents. Saves time, improves parent communication quality.
+        </div>
+        <div class="h2h-middle">
+          <div class="win-icon">💬</div>
+          <div class="verdict v-chalo">Chalo Wins</div>
+          <div class="cell-sub" style="margin-top:6px;font-size:.68rem;text-align:center">MCB has no AI here</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">Standard Notice Board</div>
+          Circular creation and WhatsApp/SMS sending available. No AI rephrase. Teacher messages go out as typed — informal language possible on official channels.
+        </div>
+      </div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">3 Mobile Apps</div>
+          Parent App + AnsApp (Teacher) + C-365 (Management). Management app gives principal/trustees live metrics on mobile.
+        </div>
+        <div class="h2h-middle">
+          <div class="win-icon">📱</div>
+          <div class="verdict v-chalo">Chalo Wins</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">2 Mobile Apps</div>
+          Parent App + Teacher App. No dedicated management or trustee dashboard app. Principals view reports only on web portal.
+        </div>
+      </div>
+
+      <div class="h2h-row"><div class="h2h-cat">COMPLIANCE & SECURITY</div></div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">IT Act 2000 Audit Trail</div>
+          Full tamper-proof audit log for all data changes. OTP verification required before any master data modification. Government inspection ready.
+        </div>
+        <div class="h2h-middle">
+          <div class="win-icon">🔒</div>
+          <div class="verdict v-chalo">Chalo Wins</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">No Audit Trail</div>
+          No field-level change tracking. No IT Act 2000 compliant logging. No OTP-verified data changes. MCB has standard role-based access but no compliance audit feature.
+        </div>
+      </div>
+
+      <div class="h2h-row"><div class="h2h-cat">WHERE MYCLASSBOARD HAS THE ADVANTAGE</div></div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">South India Installed Base</div>
+          Strong in Tamil Nadu. Building presence in AP, Telangana, Karnataka. Newer brand in those states vs MCB.
+        </div>
+        <div class="h2h-middle">
+          <div class="win-icon">🗺️</div>
+          <div class="verdict v-comp">MCB Wins</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">Larger South India Base</div>
+          2,000+ schools across South India with strong presence in AP and Telangana. Local language support (Telugu). Trusted by school chains in the region for 10+ years.
+        </div>
+      </div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">Online Exam Module</div>
+          Not available. Schools need a separate exam platform for online assessments.
+        </div>
+        <div class="h2h-middle">
+          <div class="win-icon">📝</div>
+          <div class="verdict v-comp">MCB Wins</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">Online Exam (Basic)</div>
+          Basic MCQ-based online assessment available via student portal. While limited (no subjective, no proctoring), it gives schools a built-in option for term tests online.
+        </div>
+      </div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">Pricing</div>
+          Custom SaaS pricing. Full-feature suite. Premium position in market.
+        </div>
+        <div class="h2h-middle">
+          <div class="verdict v-comp">MCB Wins</div>
+          <div class="cell-sub" style="margin-top:6px;font-size:.68rem;text-align:center">Lower cost for budget schools</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">Lower Per-student Pricing</div>
+          ₹60–₹150/student/year — more accessible for Tier-2/3 city schools with tighter budgets. Per-student model lets small schools start cheap.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Win/Loss Summary — MCB -->
+  <div class="scorecard">
+    <div class="sc-header">
+      <h3>Chalo vs MyClassboard — Win/Loss Summary</h3>
+      <span class="badge b-green">Chalo leads in 8 areas · MCB leads in 3 areas</span>
+    </div>
+    <div class="wl-grid">
+      <div class="wl-side wl-chalo-side">
+        <div class="wl-title" style="color:#065f46">✅ Where Chalo Clearly Beats MCB</div>
+        <ul class="wl-list">
+          <li><span class="icon">🤖</span><span class="text"><strong>AI Timetable (80% faster)</strong><span>MCB has zero AI — this is Chalo's biggest differentiator</span></span></li>
+          <li><span class="icon">🧠</span><span class="text"><strong>5 AI Features vs MCB's 0</strong><span>Timetable, substitution, result analysis, communication, reconciliation</span></span></li>
+          <li><span class="icon">💰</span><span class="text"><strong>50–60% Fee Speed (proven)</strong><span>MCB has no published improvement metric</span></span></li>
+          <li><span class="icon">🤖</span><span class="text"><strong>AI Bank Reconciliation</strong><span>MCB reconciliation is fully manual Excel work</span></span></li>
+          <li><span class="icon">💬</span><span class="text"><strong>AI Communication Assistant</strong><span>No equivalent in MCB</span></span></li>
+          <li><span class="icon">📱</span><span class="text"><strong>3 Apps (Management App)</strong><span>MCB has no management/trustee mobile app</span></span></li>
+          <li><span class="icon">🔒</span><span class="text"><strong>IT Act 2000 Audit Trail + OTP</strong><span>MCB has no compliance audit logging</span></span></li>
+          <li><span class="icon">🏆</span><span class="text"><strong>Industry Awards</strong><span>Frost & Sullivan + Eldrok — MCB has no awards</span></span></li>
+        </ul>
+      </div>
+      <div class="wl-side wl-comp-side">
+        <div class="wl-title" style="color:#92400e">⚠️ Where MCB Has the Advantage</div>
+        <ul class="wl-list">
+          <li><span class="icon">🗺️</span><span class="text"><strong>AP & Telangana Market Penetration</strong><span>Longer presence and trust in those states</span></span></li>
+          <li><span class="icon">📝</span><span class="text"><strong>Basic Online Exam Module</strong><span>Chalo has no online assessment capability</span></span></li>
+          <li><span class="icon">💵</span><span class="text"><strong>Lower Price Point (₹60–₹150/student)</strong><span>More accessible for budget-conscious Tier-2/3 schools</span></span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================ -->
+  <!-- COMPETITOR 3: TEACHMINT -->
+  <!-- ================================================ -->
+  <div class="section-divider"></div>
+  <div class="section-title">Head-to-Head #3 — Chalo vs Teachmint</div>
+
+  <div class="h2h">
+    <div class="h2h-header">
+      <div class="h2h-col h2h-center" style="background:#1a3a6b;">
+        <h3>Chalo Schools</h3>
+        <p>School Admin ERP · Operations-first</p>
+      </div>
+      <div class="h2h-col h2h-center" style="background:#f59e0b;color:#1a2a3a;">
+        <h3 style="font-size:1.3rem;">⚔️ HEAD TO HEAD</h3>
+        <p style="color:#78350f">ERP depth vs LMS reach</p>
+      </div>
+      <div class="h2h-col h2h-comp-header h2h-center">
+        <h3>Teachmint</h3>
+        <p>$78M Funded · LMS-first · 700K Teachers</p>
+      </div>
+    </div>
+    <div class="h2h-body">
+
+      <div class="h2h-row"><div class="h2h-cat">FEE MANAGEMENT — CHALO'S BIGGEST ADVANTAGE HERE</div></div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">Complete Fee Module</div>
+          3 collection methods, smart reconciliation, concession management, challan generation, outstanding reports, duplicate alerts, Razorpay UPI/cards. Core strength.
+        </div>
+        <div class="h2h-middle">
+          <div class="win-icon">💰</div>
+          <div class="verdict v-chalo">Chalo Wins — Major</div>
+          <div class="cell-sub" style="margin-top:6px;font-size:.68rem;text-align:center">Teachmint has NO fee module</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">No Fee Management Module</div>
+          Teachmint is an LMS — it has <strong>zero fee collection capability</strong>. Schools using Teachmint still manage fees in Excel or a separate accounting software. A critical operational gap.
+          <br/><span class="badge b-red" style="margin-top:6px">No fee module at all</span>
+        </div>
+      </div>
+
+      <div class="h2h-row"><div class="h2h-cat">SCHOOL ADMINISTRATION MODULES</div></div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">Complete Admin Suite</div>
+          Timetable, attendance, examinations, report cards, staff management, payroll, library, transport — all integrated.
+        </div>
+        <div class="h2h-middle">
+          <div class="win-icon">🏫</div>
+          <div class="verdict v-chalo">Chalo Wins — Big</div>
+          <div class="cell-sub" style="margin-top:6px;font-size:.68rem;text-align:center">Teachmint misses most admin</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">Limited Admin</div>
+          Basic attendance (for online classes), basic marks entry. <strong>No timetable, no payroll, no library, no transport, no CBSE report cards, no fee module.</strong> Not built for school administration.
+          <br/><span class="badge b-red" style="margin-top:6px">LMS-only focus</span>
+        </div>
+      </div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">CBSE/IGCSE Report Cards</div>
+          Fully formatted digital report cards in CBSE or IGCSE standard format. Published via app. Parents download anytime.
+        </div>
+        <div class="h2h-middle">
+          <div class="win-icon">📄</div>
+          <div class="verdict v-chalo">Chalo Wins</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">No Standard Report Cards</div>
+          Teachmint has marks entry for LMS assignments but cannot generate CBSE or IGCSE formatted report cards. Schools must create report cards separately.
+        </div>
+      </div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">AI Timetable + Substitution</div>
+          Claude AI generates timetable. Absent teacher → AI suggests available substitute → notified via app instantly.
+        </div>
+        <div class="h2h-middle">
+          <div class="verdict v-chalo">Chalo Wins</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">No Timetable Module</div>
+          Teachmint does not have a school timetable feature. Physical class scheduling is entirely outside the system.
+        </div>
+      </div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">Payroll, Library, Transport</div>
+          All 3 add-on modules available. Payroll with PF/ESI, library with fine management, transport with GPS hooks.
+        </div>
+        <div class="h2h-middle">
+          <div class="verdict v-chalo">Chalo Wins</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">None of These</div>
+          Zero payroll, library, or transport functionality. These are core operational needs that Teachmint completely ignores.
+        </div>
+      </div>
+
+      <div class="h2h-row"><div class="h2h-cat">WHERE TEACHMINT HAS THE ADVANTAGE</div></div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">Online Learning / LMS</div>
+          No LMS or digital content module. Chalo does not offer video lessons, live classes, or online homework submission. Listed as a gap in the roadmap.
+          <br/><span class="badge b-red" style="margin-top:6px">Missing module</span>
+        </div>
+        <div class="h2h-middle">
+          <div class="win-icon">🎓</div>
+          <div class="verdict v-comp">Teachmint Wins — Big</div>
+          <div class="cell-sub" style="margin-top:6px;font-size:.68rem;text-align:center">Core strength of Teachmint</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">World-class LMS</div>
+          Live classes, recorded video lessons, digital homework, online quizzes, student progress on content, parent visibility on learning. 700,000+ teachers already use it. Industry-leading feature.
+          <br/><span class="badge b-green" style="margin-top:6px">Core strength</span>
+        </div>
+      </div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">Pricing</div>
+          Custom subscription. Full-feature premium pricing. No free tier.
+        </div>
+        <div class="h2h-middle">
+          <div class="win-icon">💵</div>
+          <div class="verdict v-comp">Teachmint Wins</div>
+          <div class="cell-sub" style="margin-top:6px;font-size:.68rem;text-align:center">Free tier drives adoption</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">Free Tier + Premium</div>
+          Free tier for teachers gets schools hooked with zero cost. Upgrade path to paid admin modules. Significantly lowers adoption barrier, especially in Tier-2/3 cities.
+        </div>
+      </div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">Teacher Community</div>
+          No teacher network community. Chalo is school-admin focused.
+        </div>
+        <div class="h2h-middle">
+          <div class="win-icon">👩‍🏫</div>
+          <div class="verdict v-comp">Teachmint Wins</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">700,000+ Teacher Network</div>
+          Massive teacher community creates a powerful network effect. Teachers recommend Teachmint to schools. Bottom-up adoption (teacher → school admin → purchase) is very effective.
+        </div>
+      </div>
+
+      <div class="h2h-row">
+        <div class="h2h-cell chalo-cell">
+          <div class="cell-title">Funding & Growth Rate</div>
+          Bootstrapped/self-funded. Steady, profitable growth. Focused on South India market.
+        </div>
+        <div class="h2h-middle">
+          <div class="win-icon">📈</div>
+          <div class="verdict v-comp">Teachmint Wins</div>
+        </div>
+        <div class="h2h-cell">
+          <div class="cell-title">$78M VC Funded</div>
+          Tiger Global backing. Can spend heavily on marketing, sales teams, and product development. If Teachmint builds fee/admin modules, they become a full competitor overnight.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Win/Loss Summary — Teachmint -->
+  <div class="scorecard">
+    <div class="sc-header">
+      <h3>Chalo vs Teachmint — Win/Loss Summary</h3>
+      <span class="badge b-green">Chalo leads in 7 areas · Teachmint leads in 4 areas</span>
+    </div>
+    <div class="wl-grid">
+      <div class="wl-side wl-chalo-side">
+        <div class="wl-title" style="color:#065f46">✅ Where Chalo Clearly Beats Teachmint</div>
+        <ul class="wl-list">
+          <li><span class="icon">💰</span><span class="text"><strong>Complete Fee Management (3 Methods)</strong><span>Teachmint has zero fee module — schools still use Excel</span></span></li>
+          <li><span class="icon">🗓️</span><span class="text"><strong>AI Timetable & Substitution</strong><span>Not even a basic timetable exists in Teachmint</span></span></li>
+          <li><span class="icon">📄</span><span class="text"><strong>CBSE/IGCSE Report Cards</strong><span>Teachmint cannot generate formal report cards</span></span></li>
+          <li><span class="icon">👥</span><span class="text"><strong>Staff Management & Payroll</strong><span>Complete staff lifecycle — absent in Teachmint</span></span></li>
+          <li><span class="icon">📚</span><span class="text"><strong>Library & Transport Modules</strong><span>Teachmint has neither</span></span></li>
+          <li><span class="icon">🔒</span><span class="text"><strong>IT Act 2000 Compliance & OTP</strong><span>Zero compliance features in Teachmint</span></span></li>
+          <li><span class="icon">🏆</span><span class="text"><strong>Industry Awards & Proven Track Record</strong><span>Teachmint has no school ERP awards</span></span></li>
+        </ul>
+      </div>
+      <div class="wl-side wl-comp-side">
+        <div class="wl-title" style="color:#92400e">⚠️ Where Teachmint Has the Advantage</div>
+        <ul class="wl-list">
+          <li><span class="icon">🎓</span><span class="text"><strong>World-class LMS (live classes, video, quizzes)</strong><span>Chalo has no online learning module — biggest gap</span></span></li>
+          <li><span class="icon">💵</span><span class="text"><strong>Free Tier Drives Mass Adoption</strong><span>Zero cost entry removes sales barrier completely</span></span></li>
+          <li><span class="icon">👩‍🏫</span><span class="text"><strong>700,000+ Teacher Network Effect</strong><span>Bottom-up sales: teacher → school — very powerful</span></span></li>
+          <li><span class="icon">📈</span><span class="text"><strong>$78M Funding — Future Threat</strong><span>Can build fee/admin modules and compete directly</span></span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================ -->
+  <!-- FINAL SCORECARD -->
+  <!-- ================================================ -->
+  <div class="section-divider"></div>
+  <div class="section-title">Final Scorecard — Chalo vs All 3</div>
+
+  <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden;margin-bottom:36px;">
+    <table class="sc-table" style="width:100%">
+      <thead>
+        <tr>
+          <th style="width:22%">Capability Area</th>
+          <th style="text-align:center">Chalo</th>
+          <th style="text-align:center">Entab</th>
+          <th style="text-align:center">MyClassboard</th>
+          <th style="text-align:center">Teachmint</th>
+          <th style="width:22%">Verdict</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Fee Management</strong></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar bar-chalo" style="width:95%"></div></div><small>9.5/10</small></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar" style="width:75%;background:#6b7280"></div></div><small>7.5/10</small></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar" style="width:70%;background:#6b7280"></div></div><small>7.0/10</small></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar" style="width:5%;background:#ef4444"></div></div><small>0.5/10</small></td>
+          <td><span class="badge b-green">Chalo #1</span></td>
+        </tr>
+        <tr>
+          <td><strong>AI Features</strong></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar bar-chalo" style="width:95%"></div></div><small>9.5/10</small></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar" style="width:25%;background:#6b7280"></div></div><small>2.5/10</small></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar" style="width:5%;background:#6b7280"></div></div><small>0/10</small></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar" style="width:40%;background:#6b7280"></div></div><small>4.0/10</small></td>
+          <td><span class="badge b-green">Chalo #1 — by far</span></td>
+        </tr>
+        <tr>
+          <td><strong>Timetable</strong></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar bar-chalo" style="width:100%"></div></div><small>10/10</small></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar" style="width:55%;background:#6b7280"></div></div><small>5.5/10</small></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar" style="width:45%;background:#6b7280"></div></div><small>4.5/10</small></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar" style="width:5%;background:#ef4444"></div></div><small>0/10</small></td>
+          <td><span class="badge b-green">Chalo #1 — only AI option</span></td>
+        </tr>
+        <tr>
+          <td><strong>Report Cards</strong></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar bar-chalo" style="width:90%"></div></div><small>9.0/10</small></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar" style="width:85%;background:#6b7280"></div></div><small>8.5/10</small></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar" style="width:80%;background:#6b7280"></div></div><small>8.0/10</small></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar" style="width:20%;background:#ef4444"></div></div><small>2.0/10</small></td>
+          <td><span class="badge b-green">Chalo #1</span></td>
+        </tr>
+        <tr>
+          <td><strong>Communication + AI</strong></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar bar-chalo" style="width:95%"></div></div><small>9.5/10</small></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar" style="width:70%;background:#6b7280"></div></div><small>7.0/10</small></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar" style="width:65%;background:#6b7280"></div></div><small>6.5/10</small></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar" style="width:30%;background:#6b7280"></div></div><small>3.0/10</small></td>
+          <td><span class="badge b-green">Chalo #1</span></td>
+        </tr>
+        <tr>
+          <td><strong>Mobile Apps</strong></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar bar-chalo" style="width:90%"></div></div><small>9.0/10</small></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar" style="width:75%;background:#6b7280"></div></div><small>7.5/10</small></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar" style="width:70%;background:#6b7280"></div></div><small>7.0/10</small></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar" style="width:75%;background:#6b7280"></div></div><small>7.5/10</small></td>
+          <td><span class="badge b-green">Chalo #1</span></td>
+        </tr>
+        <tr>
+          <td><strong>Compliance & Security</strong></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar bar-chalo" style="width:100%"></div></div><small>10/10</small></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar" style="width:80%;background:#6b7280"></div></div><small>8.0/10</small></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar" style="width:40%;background:#6b7280"></div></div><small>4.0/10</small></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar" style="width:35%;background:#6b7280"></div></div><small>3.5/10</small></td>
+          <td><span class="badge b-green">Chalo #1</span></td>
+        </tr>
+        <tr>
+          <td><strong>LMS / Online Learning</strong></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar bar-chalo" style="width:5%;background:#ef4444"></div></div><small>0/10</small></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar" style="width:30%;background:#6b7280"></div></div><small>3.0/10</small></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar" style="width:20%;background:#6b7280"></div></div><small>2.0/10</small></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar" style="width:100%;background:#374151"></div></div><small>10/10</small></td>
+          <td><span class="badge b-red">Teachmint #1 — Chalo's gap</span></td>
+        </tr>
+        <tr>
+          <td><strong>National Brand / Scale</strong></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar bar-chalo" style="width:45%"></div></div><small>4.5/10</small></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar" style="width:95%;background:#374151"></div></div><small>9.5/10</small></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar" style="width:55%;background:#6b7280"></div></div><small>5.5/10</small></td>
+          <td style="text-align:center"><div class="bar-wrap"><div class="bar" style="width:85%;background:#6b7280"></div></div><small>8.5/10</small></td>
+          <td><span class="badge b-amber">Entab #1 — Chalo's gap</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SUMMARY BOX -->
+  <div class="summary-box">
+    <h3>Key Takeaways for Management</h3>
+    <div class="summary-grid">
+      <div class="sg-item">
+        <div class="num">7+</div>
+        <div class="lbl">Areas where Chalo beats each of the top 3 competitors. AI Timetable, Fee Reconciliation, and Communication Assistant are unique advantages no competitor currently has.</div>
+      </div>
+      <div class="sg-item">
+        <div class="num">2</div>
+        <div class="lbl">Critical gaps for Chalo: (1) LMS / Online Learning module — Teachmint dominates here. (2) National brand presence — Entab's 15–20% share gives them first-mover trust outside South India.</div>
+      </div>
+      <div class="sg-item">
+        <div class="num">0</div>
+        <div class="lbl">Competitors with AI Timetable Auto-generation, AI Fee Reconciliation, and AI Communication Assistant combined. Chalo is the <strong>only platform</strong> with all three AI features in one system.</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- container -->
+
+<div class="footer">
+  Chalo Schools — Top 3 Competitor Analysis · India K-12 School ERP · Academic Year 2024–25 · For Internal Management Review Only
+</div>
+
+</body>
+</html>
