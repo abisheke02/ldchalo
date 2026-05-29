@@ -1,0 +1,45 @@
+const fs   = require('fs');
+const path = require('path');
+const { pool } = require('../config/database');
+
+const MIGRATIONS_DIR = path.join(__dirname, '..', '..', 'migrations');
+
+const BOOTSTRAP = `
+CREATE TABLE IF NOT EXISTS schema_migrations (
+  version    TEXT PRIMARY KEY,
+  applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);`;
+
+const runMigrations = async () => {
+  await pool.query(BOOTSTRAP);
+
+  if (!fs.existsSync(MIGRATIONS_DIR)) return;
+
+  const applied = await pool.query('SELECT version FROM schema_migrations ORDER BY version');
+  const done    = new Set(applied.rows.map((r) => r.version));
+
+  const files = fs.readdirSync(MIGRATIONS_DIR)
+    .filter((f) => f.endsWith('.sql'))
+    .sort();
+
+  for (const file of files) {
+    if (done.has(file)) continue;
+
+    const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, file), 'utf8');
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query(sql);
+      await client.query('INSERT INTO schema_migrations(version) VALUES($1)', [file]);
+      await client.query('COMMIT');
+      console.log(`[migrate] ✓ ${file}`);
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw new Error(`Migration ${file} failed: ${err.message}`);
+    } finally {
+      client.release();
+    }
+  }
+};
+
+module.exports = { runMigrations };

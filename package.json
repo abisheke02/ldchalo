@@ -1,0 +1,33 @@
+{
+  "name": "school-erp-platform",
+  "version": "1.0.0",
+  "description": "School ERP + LD Platform — unified monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/api",
+    "packages/shared",
+    "packages/ui",
+    "desktop/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "dev:api": "turbo run dev --filter=@school/api",
+    "dev:erp": "turbo run dev --filter=@school/erp-web",
+    "dev:ld": "turbo run dev --filter=@school/ld-exam-web",
+    "build": "turbo run build",
+    "build:apps": "turbo run build --filter=./apps/*",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}

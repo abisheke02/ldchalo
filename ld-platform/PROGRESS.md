@@ -179,6 +179,36 @@ Supabase and Firebase are free-tier cloud services — you don't need to self-ho
 - SchoolSettingsPage (/settings): join codes, teacher list, invite teacher, link parent
 - Migration 006: school join_code, teacher_invites, parent_student_links tables
 
+### Monorepo Unification (completed 2026-05-28)
+- Unified API (`packages/api/`) replaces deprecated `packages/ld-api/` and `packages/school-api/`
+- Fixed all 24 module require-path bugs (modules 2 levels deep need `../../` not `../`)
+- Created `packages/api/migrations/` with all 12 migrations (001–012), renumbered school ERP migrations as 009–012
+- Fixed API Dockerfile to COPY migrations/ alongside src/
+- Fixed Nginx upstream: `backend:3000` → `api:3000` (matches docker-compose service name)
+- Fixed all frontend/mobile API route paths:
+  - `apps/school-erp-web` pages: added `/school/` prefix to all school ERP routes
+  - `apps/school-erp-web` LoginPage: removed broken phone-OTP flow, uses `/auth/credentials` (admin) and `/auth/login` (teacher)
+  - `apps/ld-exam-web` services/api.js: added `/ld/` prefix to all LD-specific routes
+  - `apps/ld-exam-mobile` services/api.js: added `/ld/` prefix to all LD-specific routes
+  - `apps/school-mobile` services/api.js: fully rewritten to match actual API routes
+  - `apps/school-mobile` LoginScreen: switched from OTP (not implemented) to email+password
+  - `apps/school-mobile` AttendanceScreen: added class picker UI
+- Added missing `GET /analytics/dashboard` endpoint for school-mobile dashboard stats
+- Fixed `adminAPI.triggerCron` path: `/admin/cron/${job}` → `/admin/cron/trigger/${job}`
+- Added all missing `.env.example` variables (SUPABASE_ANON_KEY, HTTP_PORT, HTTPS_PORT, etc.)
+
+### CI/CD & Infrastructure (completed 2026-05-28)
+- `.github/workflows/ci.yml`: lint, API check, web builds, desktop renderer check, Docker build
+- `.github/workflows/deploy.yml`: build + push images to GHCR, SSH deploy to staging/production
+- `packages/api/migrations/013_indexes.sql`: 65 performance indexes across all high-traffic tables
+- `desktop/ld-exam-desktop`: completed main process IPC (API URL config, network probe, auth token store, shell:openExternal), preload.js, production renderer shell, `scripts/build-renderer.js` embed script
+
+### Mobile Screens Added (completed 2026-05-28)
+- `apps/ld-exam-mobile/src/screens/notifications/NotificationsScreen.js`: full notification list with mark-read, mark-all-read, pull-to-refresh, time-ago labels
+- `apps/ld-exam-mobile/src/screens/messages/MessagesScreen.js`: conversation list + threaded message view with optimistic sends and keyboard-avoiding layout
+- `apps/ld-exam-mobile/src/components/OfflineBanner.js`: animated slide-in/out banner on connectivity changes; "back online" auto-dismiss after 2.2s
+- Navigation: Messages tab added, Notifications screen added to stack, notification bell on StudentDashboard header, OfflineBanner mounted at NavigationContainer root
+
 ---
 
 ## What's Pending
@@ -191,35 +221,38 @@ Supabase and Firebase are free-tier cloud services — you don't need to self-ho
 - Need: package name (e.g. com.ldplatform.india), store listing screenshots/description
 
 ### Production Deployment
-- Docker Compose production config (separate from dev)
-- Nginx reverse proxy config + SSL (Let's Encrypt)
-- Environment secrets management (not .env files in prod)
-- CI/CD pipeline (GitHub Actions: test → build → deploy)
+- ✅ Nginx reverse proxy config — done (infra/nginx/nginx.conf)
+- ✅ CI/CD pipeline — done (.github/workflows/)
+- ✅ Docker Compose — done (docker-compose.yml with postgres, redis, api, nginx)
+- SSL (Let's Encrypt) — uncomment HTTPS server block in nginx.conf, add certbot
 - Production PostgreSQL (Supabase or RDS) + Redis (Upstash or ElastiCache)
 - Domain setup + DNS
+- GitHub Environments: set STAGING_SSH_HOST, PROD_SSH_HOST, STAGING_SSH_KEY etc.
 
 ### Performance
-- DB index audit on high-traffic queries
+- ✅ DB index audit — done (migration 013_indexes.sql)
 - Query optimisation (N+1 checks in analytics routes)
 - Load testing setup (k6 or Artillery, target 10k concurrent)
 - Read replica for analytics queries
 
-### Mobile Screens (missing)
-- ProfileSetupScreen — already exists, needs review
-- Notifications screen (list push notifications)
-- Parent contact / messaging screen in mobile
-- Offline indicator + sync status banner
+### Desktop App
+- ✅ Main process IPC wired (config, exam mode, network, auth token)
+- ✅ Preload exposes full electronAPI surface
+- ✅ build:renderer script embeds ld-exam-web dist
+- ✅ CI verifies desktop renderer build
+- Electron auto-updater (electron-updater) for silent OTA updates
+- Windows/Mac code signing (requires paid developer certs)
 
-### Real API Keys Needed (to replace placeholders in backend/.env)
+### Real API Keys Needed (to replace placeholders in .env)
 - RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET (razorpay.com → Settings → API Keys)
 - GOOGLE_APPLICATION_CREDENTIALS (Google Cloud Console → Service Account → TTS API)
-- TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_PHONE (twilio.com)
 - ADMIN_USERNAME / ADMIN_PASSWORD (change from defaults before going live)
 
 ### Pilot Launch Checklist
 - [ ] Register 2–3 schools in production using /api/schools/register
 - [ ] Verify Supabase OTP works with real phone numbers
-- [ ] Run all 6 migrations on production DB
+- [ ] Run all 13 migrations on production DB (`docker compose logs api` to confirm)
 - [ ] Set ALLOWED_ORIGINS to production domain
 - [ ] Verify Razorpay test keys → switch to live keys
+- [ ] Set GitHub Actions secrets: DB_PASSWORD, JWT_SECRET, ADMIN_PASSWORD, SSH keys
 - [ ] Send first parent scorecard links to pilot families

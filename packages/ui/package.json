@@ -1,0 +1,11 @@
+{
+  "name": "@school/ui",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "peerDependencies": {
+    "react": ">=18",
+    "react-native": ">=0.73",
+    "react-native-vector-icons": ">=10"
+  }
+}
