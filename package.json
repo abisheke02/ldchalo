@@ -1,33 +1,24 @@
-{
-  "name": "school-erp-platform",
+﻿{
+  "name": "LD Schools",
   "version": "1.0.0",
-  "description": "School ERP + LD Platform — unified monorepo",
+  "description": "LD Schools — Learning Disability & School Management Platform",
   "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/api",
-    "packages/shared",
-    "packages/ui",
-    "desktop/*"
-  ],
   "scripts": {
-    "dev": "turbo run dev --parallel",
-    "dev:api": "turbo run dev --filter=@school/api",
-    "dev:erp": "turbo run dev --filter=@school/erp-web",
-    "dev:ld": "turbo run dev --filter=@school/ld-exam-web",
-    "build": "turbo run build",
-    "build:apps": "turbo run build --filter=./apps/*",
-    "lint": "turbo run lint",
-    "clean": "turbo run clean",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f"
+    "dev":          "concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix web\"",
+    "dev:backend":  "npm run dev --prefix backend",
+    "dev:web":      "npm run dev --prefix web",
+    "build:web":    "npm run build --prefix web",
+    "build:all":    "npm run build --prefix web && npm run build:renderer --prefix desktop",
+    "docker:up":    "docker compose up -d --build",
+    "docker:down":  "docker compose down",
+    "docker:logs":  "docker compose logs -f api"
   },
   "devDependencies": {
-    "turbo": "^2.3.0"
+    "concurrently": "^8.2.2"
   },
   "engines": {
     "node": ">=20.0.0",
-    "npm": ">=10.0.0"
+    "npm":  ">=10.0.0"
   }
 }
+

@@ -1,0 +1,1050 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>LD Schools — School Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+body{font-family:'Inter',system-ui,sans-serif;}
+.page{display:none;animation:fadeIn .18s ease;}.page.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* Toast */
+#toast-container{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;}
+.toast{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.15);animation:slideIn .25s ease;min-width:260px;max-width:340px;}
+@keyframes slideIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
+@keyframes slideOut{to{opacity:0;transform:translateX(40px)}}
+.toast-success{background:#f0fdf4;color:#15803d;border-left:3px solid #16a34a;}
+.toast-error{background:#fef2f2;color:#b91c1c;border-left:3px solid #dc2626;}
+.toast-info{background:#eff6ff;color:#1d4ed8;border-left:3px solid #2563eb;}
+
+/* Notification dropdown */
+.notif-dropdown{display:none;position:absolute;right:0;top:46px;width:340px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.12);z-index:200;overflow:hidden;}
+.notif-dropdown.open{display:block;animation:fadeIn .15s ease;}
+
+/* Search highlight */
+.search-match{background:#fef9c3;}
+
+/* Charts */
+.chart-wrap{position:relative;height:200px;}
+
+/* Sidebar tooltip on hover */
+.nav-item{position:relative;}
+
+/* Better scrollbar */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:4px;}
+
+.nav-item{display:flex;align-items:center;gap:10px;padding:7px 12px;border-radius:8px;font-size:13px;font-weight:500;color:#4B5563;cursor:pointer;transition:all .15s;}
+.nav-item:hover{background:#F3F4F6;color:#111827;}
+.nav-item.active{background:rgba(8,145,178,0.12);color:#0891B2;font-weight:600;}
+.nav-icon{width:18px;text-align:center;font-size:15px;}
+.sub{display:none;margin-left:30px;border-left:2px solid #E5E7EB;}
+.sub.open{display:block;}
+.sub-item{display:block;padding:5px 12px;font-size:12px;color:#6B7280;cursor:pointer;border-radius:0 6px 6px 0;}
+.sub-item:hover{background:#F9FAFB;color:#0891B2;}
+.sec-label{font-size:10px;font-weight:700;color:#9CA3AF;letter-spacing:.1em;text-transform:uppercase;padding:10px 12px 4px;}
+.tab-btn{padding:10px 16px;font-size:13px;font-weight:600;border-bottom:2px solid transparent;color:#6B7280;cursor:pointer;white-space:nowrap;background:none;border-top:none;border-left:none;border-right:none;}
+.tab-btn.active{border-bottom-color:#0891B2;color:#0891B2;}
+.tab-pane{display:none;}.tab-pane.active{display:block;}
+.card{background:#fff;border-radius:12px;border:1px solid #F3F4F6;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.stat{background:#fff;border-radius:12px;padding:16px 20px;box-shadow:0 1px 3px rgba(0,0,0,.07);}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
+.mod-tile{background:#fff;border-radius:12px;border:1px solid #F3F4F6;overflow:hidden;cursor:pointer;transition:all .2s;}
+.mod-tile:hover{box-shadow:0 8px 20px rgba(0,0,0,.1);transform:translateY(-2px);}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:#F9FAFB;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #E5E7EB;}
+td{padding:10px 14px;border-bottom:1px solid #F3F4F6;color:#374151;vertical-align:middle;}
+tr:hover td{background:#FAFBFF;}
+.inp{border:1px solid #D1D5DB;border-radius:8px;padding:8px 12px;font-size:13px;color:#111827;width:100%;outline:none;background:#fff;}
+.inp:focus{border-color:#0891B2;box-shadow:0 0 0 2px rgba(8,145,178,.15);}
+.btn{background:#0891B2;color:#fff;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;}
+.btn:hover{background:#0e7490;}
+.btn-w{background:#fff;color:#374151;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:500;border:1px solid #D1D5DB;cursor:pointer;}
+.btn-w:hover{background:#F9FAFB;}
+.arrow{font-size:9px;margin-left:auto;color:#9CA3AF;transition:transform .2s;display:inline-block;}
+.arrow.r{transform:rotate(90deg);}
+</style>
+</head>
+<body class="bg-gray-50">
+<div class="flex h-screen overflow-hidden">
+
+<!-- SIDEBAR -->
+<aside id="sb" class="bg-white border-r border-gray-200 flex flex-col overflow-hidden" style="width:240px;min-width:240px;transition:width .2s">
+  <div class="h-14 flex items-center gap-3 px-4 border-b shrink-0" style="background:#0e3a5c">
+    <span style="font-size:22px">📖</span>
+    <div><p class="text-white font-bold text-sm leading-tight">LD Schools</p><p class="text-blue-300" style="font-size:10px">Learning Disability Platform</p></div>
+  </div>
+  <nav class="flex-1 overflow-y-auto p-2">
+    <div class="sec-label">School ERP</div>
+    <div class="nav-item active" onclick="go('home')"><span class="nav-icon">🏠</span>Home</div>
+    <div class="nav-item" onclick="go('dashboard')"><span class="nav-icon">📊</span>Dashboard</div>
+
+    <div class="nav-item" onclick="tog('s-admin',this)"><span class="nav-icon">⚙️</span>Administration<span class="arrow" id="a-admin">▶</span></div>
+    <div class="sub" id="s-admin">
+      <div class="sub-item" onclick="go('a-school')">School Configuration</div>
+      <div class="sub-item" onclick="go('a-academic')">Academic Masters</div>
+      <div class="sub-item" onclick="go('a-masters')">Preliminary Masters</div>
+      <div class="sub-item" onclick="go('a-users')">User Management</div>
+      <div class="sub-item" onclick="go('a-roles')">Roles &amp; Permissions</div>
+      <div class="sub-item" onclick="go('a-holiday')">Holiday Calendar</div>
+    </div>
+
+    <div class="nav-item" onclick="tog('s-fo',this)"><span class="nav-icon">🏢</span>Front Office<span class="arrow" id="a-fo">▶</span></div>
+    <div class="sub" id="s-fo">
+      <div class="sub-item" onclick="go('admissions')">Enquiry List</div>
+      <div class="sub-item" onclick="go('admissions')">Call Follow-up</div>
+      <div class="sub-item" onclick="go('admissions')">Shortlisted Students</div>
+      <div class="sub-item" onclick="go('admissions')">Online Applications</div>
+    </div>
+
+    <div class="nav-item" onclick="tog('s-st',this)"><span class="nav-icon">👨‍🎓</span>Students<span class="arrow" id="a-st">▶</span></div>
+    <div class="sub" id="s-st">
+      <div class="sub-item" onclick="go('students')">Student List</div>
+      <div class="sub-item" onclick="go('students')">Add Student</div>
+      <div class="sub-item" onclick="go('students')">Promotion</div>
+      <div class="sub-item" onclick="go('students')">TC Management</div>
+      <div class="sub-item" onclick="go('students')">Bonafide Certificate</div>
+      <div class="sub-item" onclick="go('students')">Student Reports</div>
+    </div>
+
+    <div class="nav-item" onclick="tog('s-sf',this)"><span class="nav-icon">👥</span>Staff<span class="arrow" id="a-sf">▶</span></div>
+    <div class="sub" id="s-sf">
+      <div class="sub-item" onclick="go('staff')">Staff List</div>
+      <div class="sub-item" onclick="go('staff')">Add Staff</div>
+      <div class="sub-item" onclick="go('staff')">Leave Management</div>
+      <div class="sub-item" onclick="go('staff')">Staff Attendance</div>
+    </div>
+
+    <div class="nav-item" onclick="tog('s-fee',this)"><span class="nav-icon">💰</span>Fee &amp; Finance<span class="arrow" id="a-fee">▶</span></div>
+    <div class="sub" id="s-fee">
+      <div class="sub-item" onclick="go('fees')">Fee Collection</div>
+      <div class="sub-item" onclick="go('fees')">Fee Structure</div>
+      <div class="sub-item" onclick="go('fees')">Outstanding Fees</div>
+      <div class="sub-item" onclick="go('fees')">Concessions</div>
+      <div class="sub-item" onclick="go('fee-reports')">Fee Reports</div>
+    </div>
+
+    <div class="nav-item" onclick="tog('s-ex',this)"><span class="nav-icon">📝</span>Examination<span class="arrow" id="a-ex">▶</span></div>
+    <div class="sub" id="s-ex">
+      <div class="sub-item" onclick="go('exams')">Exam Planning</div>
+      <div class="sub-item" onclick="go('exams')">Mark Entry</div>
+      <div class="sub-item" onclick="go('exams')">Progress Cards</div>
+      <div class="sub-item" onclick="go('exams')">Result Analysis</div>
+    </div>
+
+    <div class="nav-item" onclick="tog('s-cm',this)"><span class="nav-icon">💬</span>Communication<span class="arrow" id="a-cm">▶</span></div>
+    <div class="sub" id="s-cm">
+      <div class="sub-item" onclick="go('communications')">Circulars</div>
+      <div class="sub-item" onclick="go('communications')">Bulk SMS</div>
+      <div class="sub-item" onclick="go('communications')">WhatsApp Alerts</div>
+      <div class="sub-item" onclick="go('communications')">Notifications</div>
+    </div>
+
+    <div class="nav-item" onclick="tog('s-tt',this)"><span class="nav-icon">📅</span>Timetable<span class="arrow" id="a-tt">▶</span></div>
+    <div class="sub" id="s-tt">
+      <div class="sub-item" onclick="go('timetable')">View Timetable</div>
+      <div class="sub-item" onclick="go('timetable')">AI Auto-Generate</div>
+      <div class="sub-item" onclick="go('timetable')">Substitution</div>
+    </div>
+
+    <div class="nav-item" onclick="tog('s-at',this)"><span class="nav-icon">✅</span>Attendance<span class="arrow" id="a-at">▶</span></div>
+    <div class="sub" id="s-at">
+      <div class="sub-item" onclick="go('attendance')">Mark Attendance</div>
+      <div class="sub-item" onclick="go('attendance')">Attendance Reports</div>
+      <div class="sub-item" onclick="go('attendance')">SMS on Absent</div>
+    </div>
+
+    <div class="nav-item" onclick="tog('s-lb',this)"><span class="nav-icon">📚</span>Library<span class="arrow" id="a-lb">▶</span></div>
+    <div class="sub" id="s-lb">
+      <div class="sub-item" onclick="go('library')">Book Catalog</div>
+      <div class="sub-item" onclick="go('library')">Issue / Return</div>
+      <div class="sub-item" onclick="go('library')">Fine Management</div>
+    </div>
+
+    <div class="nav-item" onclick="tog('s-pr',this)"><span class="nav-icon">💵</span>Payroll<span class="arrow" id="a-pr">▶</span></div>
+    <div class="sub" id="s-pr">
+      <div class="sub-item" onclick="go('payroll')">Salary Structures</div>
+      <div class="sub-item" onclick="go('payroll')">Monthly Payroll</div>
+      <div class="sub-item" onclick="go('payroll')">Payslips</div>
+    </div>
+
+    <div class="nav-item" onclick="tog('s-tr',this)"><span class="nav-icon">🚌</span>Transport<span class="arrow" id="a-tr">▶</span></div>
+    <div class="sub" id="s-tr">
+      <div class="sub-item" onclick="go('transport')">Routes &amp; Stops</div>
+      <div class="sub-item" onclick="go('transport')">Vehicle Master</div>
+      <div class="sub-item" onclick="go('transport')">Student Assignment</div>
+    </div>
+
+    <div class="nav-item" onclick="go('reports')"><span class="nav-icon">📈</span>Reports</div>
+
+    <div class="sec-label" style="margin-top:8px">LD Platform</div>
+    <div class="nav-item" onclick="go('ld-teacher')"><span class="nav-icon">👩‍🏫</span>My Class (LD)</div>
+    <div class="nav-item" onclick="go('ld-screening')"><span class="nav-icon">🔍</span>Screening</div>
+    <div class="nav-item" onclick="go('ld-practice')"><span class="nav-icon">📚</span>Practice</div>
+    <div class="nav-item" onclick="go('ld-tips')"><span class="nav-icon">💡</span>AI Tips</div>
+  </nav>
+  <div class="p-3 border-t shrink-0">
+    <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50">
+      <div class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold" style="background:#0891B2">A</div>
+      <div><p class="text-xs font-semibold text-gray-900">Admin User</p><p class="text-gray-400" style="font-size:10px">School Admin</p></div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="flex-1 flex flex-col overflow-hidden">
+  <!-- Toast container -->
+  <div id="toast-container"></div>
+
+  <header class="h-14 bg-white border-b flex items-center justify-between px-6 shrink-0" style="box-shadow:0 1px 3px rgba(0,0,0,.06)">
+    <div class="flex items-center gap-3">
+      <button onclick="toggleSB()" class="text-gray-400 hover:text-gray-700 p-1 rounded-lg hover:bg-gray-100 transition-colors">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <!-- Breadcrumb -->
+      <div id="breadcrumb" class="hidden sm:flex items-center gap-1 text-xs text-gray-400">
+        <span>LD Schools</span><span>/</span><span id="bc-page" class="text-gray-700 font-medium">Home</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <!-- Search -->
+      <div class="relative">
+        <input id="global-search" oninput="globalSearch(this.value)" placeholder="Search students…"
+          class="text-sm rounded-lg border border-gray-200 px-3 py-1.5 pl-8 w-48 focus:outline-none focus:border-blue-400 focus:w-56 transition-all"
+          style="font-size:12px"/>
+        <svg class="absolute left-2.5 top-2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <div id="search-results" class="hidden absolute top-9 left-0 w-72 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden"></div>
+      </div>
+
+      <span class="text-sm text-gray-600 font-medium hidden md:block">LD Public School</span>
+      <span class="badge hidden md:inline-flex" style="background:#dbeafe;color:#1e40af">2026-2027</span>
+
+      <!-- Notification bell -->
+      <div class="relative">
+        <button onclick="toggleNotifs()" class="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span id="notif-count" class="absolute top-1 right-1 w-4 h-4 rounded-full text-white flex items-center justify-center" style="background:#DC2626;font-size:9px;font-weight:700">3</span>
+        </button>
+        <div class="notif-dropdown" id="notif-panel">
+          <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
+            <span class="font-semibold text-sm text-gray-900">Notifications</span>
+            <button onclick="markAllRead()" class="text-xs text-blue-600 font-medium hover:underline">Mark all read</button>
+          </div>
+          <div class="divide-y divide-gray-50 max-h-64 overflow-y-auto">
+            <div class="flex gap-3 p-3 hover:bg-gray-50 cursor-pointer notif-item unread" onclick="readNotif(this)">
+              <div class="w-2 h-2 rounded-full mt-1.5 shrink-0" style="background:#DC2626"></div>
+              <div><p class="text-sm font-semibold text-gray-900">Fee Due Alert</p><p class="text-xs text-gray-500 mt-0.5">3 students overdue by 30+ days</p><p class="text-xs text-gray-400 mt-1">2 hrs ago</p></div>
+            </div>
+            <div class="flex gap-3 p-3 hover:bg-gray-50 cursor-pointer notif-item unread" onclick="readNotif(this)">
+              <div class="w-2 h-2 rounded-full mt-1.5 shrink-0" style="background:#D97706"></div>
+              <div><p class="text-sm font-semibold text-gray-900">Attendance Alert</p><p class="text-xs text-gray-500 mt-0.5">Grade 6-B below 75% this week</p><p class="text-xs text-gray-400 mt-1">5 hrs ago</p></div>
+            </div>
+            <div class="flex gap-3 p-3 hover:bg-gray-50 cursor-pointer notif-item unread" onclick="readNotif(this)">
+              <div class="w-2 h-2 rounded-full mt-1.5 shrink-0" style="background:#059669"></div>
+              <div><p class="text-sm text-gray-700">New student enrolled: Ira Mehta</p><p class="text-xs text-gray-400 mt-1">Yesterday</p></div>
+            </div>
+            <div class="flex gap-3 p-3 hover:bg-gray-50 cursor-pointer notif-item" onclick="readNotif(this)">
+              <div class="w-2 h-2 rounded-full mt-1.5 shrink-0 bg-gray-300"></div>
+              <div><p class="text-sm text-gray-600">Exam schedule updated</p><p class="text-xs text-gray-400 mt-1">2 days ago</p></div>
+            </div>
+          </div>
+          <div class="px-4 py-2.5 border-t border-gray-100 text-center">
+            <button onclick="go('communications');closeNotifs()" class="text-xs text-blue-600 font-medium hover:underline">View all notifications</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- User avatar dropdown -->
+      <div class="relative group">
+        <button class="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 transition-colors">
+          <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style="background:#0891B2">A</div>
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-gray-400"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="hidden group-hover:block absolute right-0 top-10 w-44 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+          <div class="px-4 py-3 border-b border-gray-100"><p class="font-semibold text-sm">Admin User</p><p class="text-xs text-gray-400">school_admin</p></div>
+          <button onclick="go('a-school')" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">⚙️ Settings</button>
+          <button class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2" onclick="toast('Logged out','success')">🚪 Logout</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 overflow-y-auto p-6">
+
+<!-- HOME -->
+<div id="page-home" class="page active">
+  <div class="rounded-xl text-white px-6 py-5 mb-6 flex justify-between items-center" style="background:linear-gradient(135deg,#0e3a5c,#1a6fa8)">
+    <div><h1 class="text-xl font-bold">LD Public School</h1><p class="text-blue-200 text-sm mt-1">Thursday, 29 May 2026</p></div>
+    <div class="text-right"><p class="font-semibold">Admin User</p><p class="text-blue-300 text-xs">School Admin</p></div>
+  </div>
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+    <div class="stat border-l-4" style="border-color:#2563EB"><p class="text-2xl font-bold">842</p><p class="text-xs text-gray-500 mt-1">Total Students</p></div>
+    <div class="stat border-l-4" style="border-color:#059669"><p class="text-2xl font-bold">756</p><p class="text-xs text-gray-500 mt-1">Present Today</p></div>
+    <div class="stat border-l-4" style="border-color:#D97706"><p class="text-2xl font-bold">₹48,500</p><p class="text-xs text-gray-500 mt-1">Fees Today</p></div>
+    <div class="stat border-l-4" style="border-color:#7C3AED"><p class="text-2xl font-bold">24</p><p class="text-xs text-gray-500 mt-1">Active Classes</p></div>
+  </div>
+  <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Modules</p>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div class="mod-tile" onclick="go('dashboard')"><div class="flex items-center gap-4 p-5"><div class="w-14 h-14 rounded-xl flex items-center justify-center text-3xl" style="background:#0891B218">📊</div><div><h3 class="font-bold">Dashboard</h3><p class="text-xs text-gray-400 mt-0.5">Analytics &amp; Overview</p></div></div><div class="px-5 py-2 text-xs font-semibold text-white" style="background:#0891B2">Take me In →</div></div>
+    <div class="mod-tile" onclick="go('a-school')"><div class="flex items-center gap-4 p-5"><div class="w-14 h-14 rounded-xl flex items-center justify-center text-3xl" style="background:#7C3AED18">⚙️</div><div><h3 class="font-bold">Administration</h3><p class="text-xs text-gray-400 mt-0.5">Settings, Security &amp; Authorization</p></div></div><div class="px-5 py-2 text-xs font-semibold text-white" style="background:#7C3AED">Take me In →</div></div>
+    <div class="mod-tile" onclick="go('admissions')"><div class="flex items-center gap-4 p-5"><div class="w-14 h-14 rounded-xl flex items-center justify-center text-3xl" style="background:#2563EB18">🏢</div><div><h3 class="font-bold">Front Office</h3><p class="text-xs text-gray-400 mt-0.5">Enquiry, Interview &amp; Admission</p></div></div><div class="px-5 py-2 text-xs font-semibold text-white" style="background:#2563EB">Take me In →</div></div>
+    <div class="mod-tile" onclick="go('students')"><div class="flex items-center gap-4 p-5"><div class="w-14 h-14 rounded-xl flex items-center justify-center text-3xl" style="background:#05966918">👨‍🎓</div><div><h3 class="font-bold">Students</h3><p class="text-xs text-gray-400 mt-0.5">Create, Manage &amp; Students</p></div></div><div class="px-5 py-2 text-xs font-semibold text-white" style="background:#059669">Take me In →</div></div>
+    <div class="mod-tile" onclick="go('staff')"><div class="flex items-center gap-4 p-5"><div class="w-14 h-14 rounded-xl flex items-center justify-center text-3xl" style="background:#DC262618">👥</div><div><h3 class="font-bold">Staff</h3><p class="text-xs text-gray-400 mt-0.5">Create &amp; Manage Staff</p></div></div><div class="px-5 py-2 text-xs font-semibold text-white" style="background:#DC2626">Take me In →</div></div>
+    <div class="mod-tile" onclick="go('fees')"><div class="flex items-center gap-4 p-5"><div class="w-14 h-14 rounded-xl flex items-center justify-center text-3xl" style="background:#D9770618">💰</div><div><h3 class="font-bold">Fee &amp; Finance</h3><p class="text-xs text-gray-400 mt-0.5">Configure &amp; Collect Fee</p></div></div><div class="px-5 py-2 text-xs font-semibold text-white" style="background:#D97706">Take me In →</div></div>
+    <div class="mod-tile" onclick="go('exams')"><div class="flex items-center gap-4 p-5"><div class="w-14 h-14 rounded-xl flex items-center justify-center text-3xl" style="background:#7C3AED18">📝</div><div><h3 class="font-bold">Examination</h3><p class="text-xs text-gray-400 mt-0.5">Exam &amp; Progress Card</p></div></div><div class="px-5 py-2 text-xs font-semibold text-white" style="background:#7C3AED">Take me In →</div></div>
+    <div class="mod-tile" onclick="go('communications')"><div class="flex items-center gap-4 p-5"><div class="w-14 h-14 rounded-xl flex items-center justify-center text-3xl" style="background:#0891B218">💬</div><div><h3 class="font-bold">Communication</h3><p class="text-xs text-gray-400 mt-0.5">SMS &amp; Email</p></div></div><div class="px-5 py-2 text-xs font-semibold text-white" style="background:#0891B2">Take me In →</div></div>
+    <div class="mod-tile" onclick="go('timetable')"><div class="flex items-center gap-4 p-5"><div class="w-14 h-14 rounded-xl flex items-center justify-center text-3xl" style="background:#05966918">📅</div><div><h3 class="font-bold">Timetable</h3><p class="text-xs text-gray-400 mt-0.5">Configure Timetable</p></div></div><div class="px-5 py-2 text-xs font-semibold text-white" style="background:#059669">Take me In →</div></div>
+    <div class="mod-tile" onclick="go('library')"><div class="flex items-center gap-4 p-5"><div class="w-14 h-14 rounded-xl flex items-center justify-center text-3xl" style="background:#B4530918">📚</div><div><h3 class="font-bold">Library</h3><p class="text-xs text-gray-400 mt-0.5">Book Catalog &amp; Issue</p></div></div><div class="px-5 py-2 text-xs font-semibold text-white" style="background:#B45309">Take me In →</div></div>
+    <div class="mod-tile" onclick="go('attendance')"><div class="flex items-center gap-4 p-5"><div class="w-14 h-14 rounded-xl flex items-center justify-center text-3xl" style="background:#2563EB18">✅</div><div><h3 class="font-bold">Attendance</h3><p class="text-xs text-gray-400 mt-0.5">Student &amp; Staff Attendance</p></div></div><div class="px-5 py-2 text-xs font-semibold text-white" style="background:#2563EB">Take me In →</div></div>
+    <div class="mod-tile" onclick="go('payroll')"><div class="flex items-center gap-4 p-5"><div class="w-14 h-14 rounded-xl flex items-center justify-center text-3xl" style="background:#DC262618">💵</div><div><h3 class="font-bold">Payroll</h3><p class="text-xs text-gray-400 mt-0.5">Salary &amp; Payslips</p></div></div><div class="px-5 py-2 text-xs font-semibold text-white" style="background:#DC2626">Take me In →</div></div>
+    <div class="mod-tile" onclick="go('transport')"><div class="flex items-center gap-4 p-5"><div class="w-14 h-14 rounded-xl flex items-center justify-center text-3xl" style="background:#7C3AED18">🚌</div><div><h3 class="font-bold">Transport</h3><p class="text-xs text-gray-400 mt-0.5">Routes &amp; Students</p></div></div><div class="px-5 py-2 text-xs font-semibold text-white" style="background:#7C3AED">Take me In →</div></div>
+    <div class="mod-tile" onclick="go('reports')"><div class="flex items-center gap-4 p-5"><div class="w-14 h-14 rounded-xl flex items-center justify-center text-3xl" style="background:#05966918">📈</div><div><h3 class="font-bold">Reports</h3><p class="text-xs text-gray-400 mt-0.5">Fee, Exam &amp; Attendance</p></div></div><div class="px-5 py-2 text-xs font-semibold text-white" style="background:#059669">Take me In →</div></div>
+    <div class="mod-tile" onclick="go('ld-teacher')"><div class="flex items-center gap-4 p-5"><div class="w-14 h-14 rounded-xl flex items-center justify-center text-3xl" style="background:#0891B218">🤖</div><div><h3 class="font-bold">LD Platform</h3><p class="text-xs text-gray-400 mt-0.5">Learning Disability AI Support</p></div></div><div class="px-5 py-2 text-xs font-semibold text-white" style="background:#0891B2">Take me In →</div></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="page-dashboard" class="page">
+  <div class="flex justify-between items-center mb-5">
+    <h1 class="text-2xl font-bold">Dashboard</h1>
+    <div class="flex gap-2">
+      <button class="btn-w" style="font-size:12px;padding:6px 12px" onclick="toast('Report exported','success')">📥 Export</button>
+      <button class="btn" style="font-size:12px;padding:6px 12px" onclick="toast('Dashboard refreshed','info')">↻ Refresh</button>
+    </div>
+  </div>
+
+  <!-- KPI cards -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="stat border-l-4 hover:shadow-md transition-shadow cursor-pointer" style="border-color:#2563EB">
+      <div class="flex justify-between items-start"><div><p class="text-2xl font-bold text-gray-900">842</p><p class="text-xs text-gray-500 mt-1">Total Students</p><p class="text-xs mt-2" style="color:#2563EB">↑ 12 this month</p></div><div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:#dbeafe">👨‍🎓</div></div>
+    </div>
+    <div class="stat border-l-4 hover:shadow-md transition-shadow cursor-pointer" style="border-color:#059669">
+      <div class="flex justify-between items-start"><div><p class="text-2xl font-bold text-gray-900">756</p><p class="text-xs text-gray-500 mt-1">Present Today</p><p class="text-xs mt-2" style="color:#059669">89.8% attendance</p></div><div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:#dcfce7">✅</div></div>
+    </div>
+    <div class="stat border-l-4 hover:shadow-md transition-shadow cursor-pointer" style="border-color:#D97706">
+      <div class="flex justify-between items-start"><div><p class="text-2xl font-bold text-gray-900">₹48.5K</p><p class="text-xs text-gray-500 mt-1">Collected Today</p><p class="text-xs mt-2" style="color:#D97706">₹3.7L outstanding</p></div><div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:#fef3c7">💰</div></div>
+    </div>
+    <div class="stat border-l-4 hover:shadow-md transition-shadow cursor-pointer" style="border-color:#7C3AED">
+      <div class="flex justify-between items-start"><div><p class="text-2xl font-bold text-gray-900">47</p><p class="text-xs text-gray-500 mt-1">LD Students</p><p class="text-xs mt-2" style="color:#7C3AED">5.6% of total</p></div><div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:#ede9fe">🧠</div></div>
+    </div>
+  </div>
+
+  <!-- Charts row -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+    <!-- Attendance chart -->
+    <div class="card lg:col-span-2">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-semibold text-gray-900">Attendance — Last 7 Days</h3>
+        <span class="badge" style="background:#dcfce7;color:#15803d">Avg 90.2%</span>
+      </div>
+      <div class="chart-wrap"><canvas id="chart-attendance"></canvas></div>
+    </div>
+
+    <!-- LD Donut -->
+    <div class="card">
+      <h3 class="font-semibold text-gray-900 mb-4">LD Type Distribution</h3>
+      <div style="height:160px;position:relative"><canvas id="chart-ld"></canvas></div>
+      <div class="space-y-2 mt-4">
+        <div class="flex justify-between items-center"><div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background:#DC2626"></div><span class="text-xs text-gray-600">Dyslexia</span></div><span class="text-xs font-bold">22</span></div>
+        <div class="flex justify-between items-center"><div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background:#2563EB"></div><span class="text-xs text-gray-600">Dyscalculia</span></div><span class="text-xs font-bold">12</span></div>
+        <div class="flex justify-between items-center"><div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background:#D97706"></div><span class="text-xs text-gray-600">Dysgraphia</span></div><span class="text-xs font-bold">8</span></div>
+        <div class="flex justify-between items-center"><div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background:#7C3AED"></div><span class="text-xs text-gray-600">Mixed</span></div><span class="text-xs font-bold">5</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fee chart + recent activity -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+    <div class="card">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-semibold text-gray-900">Fee Collection — This Month</h3>
+        <span class="text-xs text-gray-400">by class</span>
+      </div>
+      <div class="chart-wrap"><canvas id="chart-fees"></canvas></div>
+    </div>
+
+    <div class="card">
+      <h3 class="font-semibold text-gray-900 mb-4">Recent Activity</h3>
+      <div class="space-y-3">
+        <div class="flex items-start gap-3"><div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-sm" style="background:#dcfce7">✅</div><div><p class="text-sm text-gray-900 font-medium">Attendance marked — Grade 5-A</p><p class="text-xs text-gray-400">by Ravi Shankar · 15 min ago</p></div></div>
+        <div class="flex items-start gap-3"><div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-sm" style="background:#fef3c7">💰</div><div><p class="text-sm text-gray-900 font-medium">Fee collected — ₹12,000</p><p class="text-xs text-gray-400">Arjun Sharma · 42 min ago</p></div></div>
+        <div class="flex items-start gap-3"><div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-sm" style="background:#ede9fe">🧠</div><div><p class="text-sm text-gray-900 font-medium">LD screening completed</p><p class="text-xs text-gray-400">Vikram Gupta — Dysgraphia detected · 1h ago</p></div></div>
+        <div class="flex items-start gap-3"><div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-sm" style="background:#dbeafe">👨‍🎓</div><div><p class="text-sm text-gray-900 font-medium">New student enrolled</p><p class="text-xs text-gray-400">Ira Mehta — Grade 5-A · 2h ago</p></div></div>
+        <div class="flex items-start gap-3"><div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-sm" style="background:#fee2e2">📢</div><div><p class="text-sm text-gray-900 font-medium">Circular published</p><p class="text-xs text-gray-400">Annual Sports Day · 3h ago</p></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STUDENTS -->
+<div id="page-students" class="page">
+  <div class="flex justify-between items-center mb-5"><div><h1 class="text-2xl font-bold">Students</h1><p class="text-sm text-gray-500 mt-0.5">Total: 842 students</p></div><button class="btn">+ Add Student</button></div>
+  <div class="card mb-4 flex flex-wrap gap-3"><input class="inp" style="max-width:280px" placeholder="🔍  Search name or email…"/><select class="inp" style="width:160px"><option>All Classes</option><option>Grade 5-A</option><option>Grade 6-B</option><option>Grade 8-A</option></select><select class="inp" style="width:160px"><option>All LD Status</option><option>Dyslexia</option><option>Not Screened</option><option>Not Detected</option></select></div>
+  <div class="card overflow-hidden" style="padding:0">
+    <table>
+      <thead><tr><th>#</th><th>Student</th><th>Class</th><th>Phone</th><th>LD Status</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td class="text-gray-400">1</td><td><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style="background:#2563EB">A</div><div><p class="font-semibold">Arjun Sharma</p><p class="text-xs text-gray-400">arjun@school.in</p></div></div></td><td>Grade 5-A</td><td>9876543210</td><td><span class="badge" style="background:#fef2f2;color:#991b1b">Dyslexia</span></td><td><button class="btn-w" style="padding:4px 10px;font-size:12px">View Profile</button></td></tr>
+        <tr><td class="text-gray-400">2</td><td><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style="background:#059669">P</div><div><p class="font-semibold">Priya Nair</p><p class="text-xs text-gray-400">priya@school.in</p></div></div></td><td>Grade 6-B</td><td>9765432109</td><td><span class="badge" style="background:#F3F4F6;color:#374151">Not Screened</span></td><td><button class="btn-w" style="padding:4px 10px;font-size:12px">View Profile</button></td></tr>
+        <tr><td class="text-gray-400">3</td><td><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style="background:#7C3AED">R</div><div><p class="font-semibold">Rahul Mehta</p><p class="text-xs text-gray-400">rahul@school.in</p></div></div></td><td>Grade 7-A</td><td>9654321098</td><td><span class="badge" style="background:#f5f3ff;color:#5b21b6">Mixed LD</span></td><td><button class="btn-w" style="padding:4px 10px;font-size:12px">View Profile</button></td></tr>
+        <tr><td class="text-gray-400">4</td><td><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style="background:#D97706">S</div><div><p class="font-semibold">Sneha Patel</p><p class="text-xs text-gray-400">sneha@school.in</p></div></div></td><td>Grade 5-B</td><td>9543210987</td><td><span class="badge" style="background:#F3F4F6;color:#374151">Not Screened</span></td><td><button class="btn-w" style="padding:4px 10px;font-size:12px">View Profile</button></td></tr>
+        <tr><td class="text-gray-400">5</td><td><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style="background:#DC2626">A</div><div><p class="font-semibold">Aditya Kumar</p><p class="text-xs text-gray-400">aditya@school.in</p></div></div></td><td>Grade 8-A</td><td>9432109876</td><td><span class="badge" style="background:#eff6ff;color:#1d4ed8">Dyscalculia</span></td><td><button class="btn-w" style="padding:4px 10px;font-size:12px">View Profile</button></td></tr>
+        <tr><td class="text-gray-400">6</td><td><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style="background:#0891B2">M</div><div><p class="font-semibold">Meera Singh</p><p class="text-xs text-gray-400">meera@school.in</p></div></div></td><td>Grade 6-A</td><td>9321098765</td><td><span class="badge" style="background:#f0fdf4;color:#14532d">Not Detected</span></td><td><button class="btn-w" style="padding:4px 10px;font-size:12px">View Profile</button></td></tr>
+      </tbody>
+    </table>
+    <div class="px-4 py-3 border-t flex justify-between items-center"><p class="text-xs text-gray-500">Showing 1–6 of 842</p><div class="flex gap-2"><button class="btn-w" style="padding:5px 12px;font-size:12px">← Prev</button><button class="btn" style="padding:5px 12px;font-size:12px">Next →</button></div></div>
+  </div>
+</div>
+
+<!-- ATTENDANCE -->
+<div id="page-attendance" class="page">
+  <h1 class="text-2xl font-bold mb-5">Attendance</h1>
+  <div class="grid grid-cols-4 gap-4 mb-5">
+    <div class="card text-center border-t-4" style="border-color:#059669"><p class="text-2xl font-bold" style="color:#059669">756</p><p class="text-xs text-gray-500 mt-1">Present</p></div>
+    <div class="card text-center border-t-4" style="border-color:#DC2626"><p class="text-2xl font-bold" style="color:#DC2626">86</p><p class="text-xs text-gray-500 mt-1">Absent</p></div>
+    <div class="card text-center border-t-4" style="border-color:#D97706"><p class="text-2xl font-bold" style="color:#D97706">0</p><p class="text-xs text-gray-500 mt-1">Late</p></div>
+    <div class="card text-center border-t-4" style="border-color:#9CA3AF"><p class="text-2xl font-bold text-gray-500">842</p><p class="text-xs text-gray-500 mt-1">Total</p></div>
+  </div>
+  <div class="card flex flex-wrap gap-4 mb-5">
+    <div><label class="text-xs font-medium text-gray-600 block mb-1">Class</label><select class="inp" style="width:220px"><option>Grade 5-A (32 students)</option><option>Grade 6-B</option></select></div>
+    <div><label class="text-xs font-medium text-gray-600 block mb-1">Date</label><input class="inp" type="date" value="2026-05-29" style="width:160px"/></div>
+    <div class="flex items-end"><button class="btn">Load Class</button></div>
+  </div>
+  <div class="card overflow-hidden" style="padding:0">
+    <table>
+      <thead><tr><th>Student</th><th>Roll</th><th>Status</th><th>Mark</th></tr></thead>
+      <tbody>
+        <tr><td><div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background:#059669"></div><span class="font-medium">Arjun Sharma</span></div></td><td class="text-gray-500">01</td><td><span class="badge" style="background:#f0fdf4;color:#14532d">present</span></td><td><div class="flex gap-2"><button class="btn" style="padding:3px 10px;font-size:11px;background:#059669">✓</button><button class="btn-w" style="padding:3px 10px;font-size:11px;color:#DC2626">✗</button><button class="btn-w" style="padding:3px 10px;font-size:11px;color:#D97706">⏰</button></div></td></tr>
+        <tr><td><div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background:#059669"></div><span class="font-medium">Priya Nair</span></div></td><td class="text-gray-500">02</td><td><span class="badge" style="background:#f0fdf4;color:#14532d">present</span></td><td><div class="flex gap-2"><button class="btn" style="padding:3px 10px;font-size:11px;background:#059669">✓</button><button class="btn-w" style="padding:3px 10px;font-size:11px;color:#DC2626">✗</button><button class="btn-w" style="padding:3px 10px;font-size:11px;color:#D97706">⏰</button></div></td></tr>
+        <tr><td><div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background:#DC2626"></div><span class="font-medium">Rahul Mehta</span></div></td><td class="text-gray-500">03</td><td><span class="badge" style="background:#fef2f2;color:#991b1b">absent</span></td><td><div class="flex gap-2"><button class="btn-w" style="padding:3px 10px;font-size:11px;color:#059669">✓</button><button class="btn" style="padding:3px 10px;font-size:11px;background:#DC2626">✗</button><button class="btn-w" style="padding:3px 10px;font-size:11px;color:#D97706">⏰</button></div></td></tr>
+        <tr><td><div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background:#D97706"></div><span class="font-medium">Sneha Patel</span></div></td><td class="text-gray-500">04</td><td><span class="badge" style="background:#fef3c7;color:#78350f">late</span></td><td><div class="flex gap-2"><button class="btn-w" style="padding:3px 10px;font-size:11px;color:#059669">✓</button><button class="btn-w" style="padding:3px 10px;font-size:11px;color:#DC2626">✗</button><button class="btn" style="padding:3px 10px;font-size:11px;background:#D97706">⏰</button></div></td></tr>
+        <tr><td><div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background:#059669"></div><span class="font-medium">Aditya Kumar</span></div></td><td class="text-gray-500">05</td><td><span class="badge" style="background:#f0fdf4;color:#14532d">present</span></td><td><div class="flex gap-2"><button class="btn" style="padding:3px 10px;font-size:11px;background:#059669">✓</button><button class="btn-w" style="padding:3px 10px;font-size:11px;color:#DC2626">✗</button><button class="btn-w" style="padding:3px 10px;font-size:11px;color:#D97706">⏰</button></div></td></tr>
+      </tbody>
+    </table>
+    <div class="p-4 border-t flex justify-end"><button class="btn" onclick="toast('Attendance saved successfully','success')">Save Attendance</button></div>
+  </div>
+</div>
+
+<!-- FEES -->
+<div id="page-fees" class="page">
+  <h1 class="text-2xl font-bold mb-5">Fee &amp; Finance</h1>
+  <div class="grid grid-cols-3 gap-4 mb-5">
+    <div class="card border-l-4" style="border-color:#2563EB"><p class="text-xl font-bold">₹12,42,000</p><p class="text-xs text-gray-500 mt-1">Total Due (This Term)</p></div>
+    <div class="card border-l-4" style="border-color:#059669"><p class="text-xl font-bold" style="color:#059669">₹8,68,400</p><p class="text-xs text-gray-500 mt-1">Total Collected</p></div>
+    <div class="card border-l-4" style="border-color:#DC2626"><p class="text-xl font-bold" style="color:#DC2626">₹3,73,600</p><p class="text-xs text-gray-500 mt-1">Outstanding</p></div>
+  </div>
+  <div class="card overflow-hidden" style="padding:0">
+    <div class="px-5 py-4 border-b flex justify-between items-center"><h3 class="font-semibold">Outstanding Fees</h3><button class="btn-w" style="font-size:12px;padding:5px 12px" onclick="toast('Report exported','success')">📥 Export</button></div>
+    <table>
+      <thead><tr><th>Student</th><th>Class</th><th style="text-align:right">Due</th><th style="text-align:right">Paid</th><th style="text-align:right">Balance</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td class="font-medium">Arjun Sharma</td><td>Grade 5-A</td><td style="text-align:right">₹12,000</td><td style="text-align:right;color:#059669">₹8,000</td><td style="text-align:right;font-weight:600;color:#DC2626">₹4,000</td><td><button class="btn" style="padding:4px 12px;font-size:12px" onclick="toast('Fee collected. Receipt generated','success')">Collect</button></td></tr>
+        <tr><td class="font-medium">Priya Nair</td><td>Grade 6-B</td><td style="text-align:right">₹15,000</td><td style="text-align:right;color:#059669">₹0</td><td style="text-align:right;font-weight:600;color:#DC2626">₹15,000</td><td><button class="btn" style="padding:4px 12px;font-size:12px" onclick="toast('Fee collected. Receipt generated','success')">Collect</button></td></tr>
+        <tr><td class="font-medium">Rahul Mehta</td><td>Grade 7-A</td><td style="text-align:right">₹12,000</td><td style="text-align:right;color:#059669">₹12,000</td><td style="text-align:right;font-weight:600;color:#059669">₹0</td><td><span class="badge" style="background:#f0fdf4;color:#14532d">Paid ✓</span></td></tr>
+        <tr><td class="font-medium">Aditya Kumar</td><td>Grade 8-A</td><td style="text-align:right">₹18,000</td><td style="text-align:right;color:#059669">₹6,000</td><td style="text-align:right;font-weight:600;color:#DC2626">₹12,000</td><td><button class="btn" style="padding:4px 12px;font-size:12px" onclick="toast('Fee collected. Receipt generated','success')">Collect</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- STAFF -->
+<div id="page-staff" class="page">
+  <div class="flex justify-between items-center mb-5"><h1 class="text-2xl font-bold">Staff</h1><button class="btn">+ Add Staff</button></div>
+  <div class="card overflow-hidden" style="padding:0">
+    <table>
+      <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Department</th><th>Designation</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style="background:#DC2626">R</div><span class="font-medium">Ravi Shankar</span></div></td><td class="text-gray-500">ravi@school.in</td><td><span class="badge" style="background:#dbeafe;color:#1e40af">teacher</span></td><td>Science</td><td>Physics Teacher</td><td><button class="btn-w" style="padding:4px 10px;font-size:12px">View</button></td></tr>
+        <tr><td><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style="background:#7C3AED">L</div><span class="font-medium">Lakshmi Devi</span></div></td><td class="text-gray-500">lakshmi@school.in</td><td><span class="badge" style="background:#dbeafe;color:#1e40af">teacher</span></td><td>Math</td><td>Math HOD</td><td><button class="btn-w" style="padding:4px 10px;font-size:12px">View</button></td></tr>
+        <tr><td><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style="background:#059669">S</div><span class="font-medium">Suresh Kumar</span></div></td><td class="text-gray-500">suresh@school.in</td><td><span class="badge" style="background:#fef2f2;color:#991b1b">school_admin</span></td><td>Admin</td><td>Vice Principal</td><td><button class="btn-w" style="padding:4px 10px;font-size:12px">View</button></td></tr>
+        <tr><td><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style="background:#D97706">A</div><span class="font-medium">Anita Rao</span></div></td><td class="text-gray-500">anita@school.in</td><td><span class="badge" style="background:#dbeafe;color:#1e40af">teacher</span></td><td>English</td><td>English Teacher</td><td><button class="btn-w" style="padding:4px 10px;font-size:12px">View</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ADMISSIONS -->
+<div id="page-admissions" class="page">
+  <h1 class="text-2xl font-bold mb-5">Front Office — Admissions</h1>
+  <div class="grid grid-cols-5 gap-3 mb-5">
+    <div class="card text-center cursor-pointer hover:shadow-md"><p class="text-2xl font-bold">18</p><span class="badge mt-2" style="background:#dbeafe;color:#1e40af">New</span></div>
+    <div class="card text-center cursor-pointer hover:shadow-md"><p class="text-2xl font-bold">12</p><span class="badge mt-2" style="background:#fef3c7;color:#92400e">Contacted</span></div>
+    <div class="card text-center cursor-pointer hover:shadow-md"><p class="text-2xl font-bold">8</p><span class="badge mt-2" style="background:#f5f3ff;color:#5b21b6">Visited</span></div>
+    <div class="card text-center cursor-pointer hover:shadow-md"><p class="text-2xl font-bold">5</p><span class="badge mt-2" style="background:#f0fdf4;color:#14532d">Enrolled</span></div>
+    <div class="card text-center cursor-pointer hover:shadow-md"><p class="text-2xl font-bold">3</p><span class="badge mt-2" style="background:#fef2f2;color:#991b1b">Rejected</span></div>
+  </div>
+  <div class="card overflow-hidden" style="padding:0">
+    <table>
+      <thead><tr><th>Student Name</th><th>Parent</th><th>Phone</th><th>Grade</th><th>Status</th><th>Update</th></tr></thead>
+      <tbody>
+        <tr><td class="font-medium">Aarush Jain</td><td>Rajesh Jain</td><td>9876500011</td><td>Grade 5</td><td><span class="badge" style="background:#dbeafe;color:#1e40af">New</span></td><td><select class="inp" style="width:120px;font-size:12px"><option>new</option><option>contacted</option><option>visited</option><option>enrolled</option><option>rejected</option></select></td></tr>
+        <tr><td class="font-medium">Diya Shah</td><td>Nita Shah</td><td>9876500012</td><td>Grade 3</td><td><span class="badge" style="background:#fef3c7;color:#92400e">Contacted</span></td><td><select class="inp" style="width:120px;font-size:12px"><option>new</option><option selected>contacted</option><option>visited</option><option>enrolled</option><option>rejected</option></select></td></tr>
+        <tr><td class="font-medium">Vivan Gupta</td><td>Sanjay Gupta</td><td>9876500013</td><td>Grade 8</td><td><span class="badge" style="background:#f5f3ff;color:#5b21b6">Visited</span></td><td><select class="inp" style="width:120px;font-size:12px"><option>new</option><option>contacted</option><option selected>visited</option><option>enrolled</option><option>rejected</option></select></td></tr>
+        <tr><td class="font-medium">Ira Mehta</td><td>Pooja Mehta</td><td>9876500014</td><td>Grade 1</td><td><span class="badge" style="background:#f0fdf4;color:#14532d">Enrolled</span></td><td><select class="inp" style="width:120px;font-size:12px"><option>new</option><option>contacted</option><option>visited</option><option selected>enrolled</option><option>rejected</option></select></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- EXAMS -->
+<div id="page-exams" class="page">
+  <div class="flex justify-between items-center mb-5"><h1 class="text-2xl font-bold">Examination</h1><button class="btn">+ New Exam</button></div>
+  <div class="grid grid-cols-3 gap-4 mb-5">
+    <div class="card cursor-pointer hover:shadow-md"><div class="flex justify-between mb-3"><span style="font-size:28px">📝</span><span class="badge" style="background:#f0fdf4;color:#14532d">Completed</span></div><h3 class="font-bold">Unit Test 1</h3><p class="text-xs text-gray-500 mt-1">May 2026 · Unit Test</p></div>
+    <div class="card cursor-pointer hover:shadow-md"><div class="flex justify-between mb-3"><span style="font-size:28px">📝</span><span class="badge" style="background:#fef3c7;color:#78350f">Upcoming</span></div><h3 class="font-bold">Half-Yearly Exam</h3><p class="text-xs text-gray-500 mt-1">Jul 2026 · Midterm</p></div>
+    <div class="card cursor-pointer hover:shadow-md"><div class="flex justify-between mb-3"><span style="font-size:28px">📝</span><span class="badge" style="background:#fef3c7;color:#78350f">Upcoming</span></div><h3 class="font-bold">Annual Exam</h3><p class="text-xs text-gray-500 mt-1">Nov 2026 · Final</p></div>
+  </div>
+  <div class="card">
+    <h3 class="font-semibold mb-4">Mark Entry — Unit Test 1 — Grade 5-A</h3>
+    <div class="flex gap-3 mb-4"><select class="inp" style="width:200px"><option>Grade 5-A</option><option>Grade 6-B</option></select><select class="inp" style="width:200px"><option>Mathematics</option><option>Science</option><option>English</option></select></div>
+    <table>
+      <thead><tr><th>Student</th><th>Max Marks</th><th>Marks Obtained</th><th>Grade</th></tr></thead>
+      <tbody>
+        <tr><td class="font-medium">Arjun Sharma</td><td>100</td><td><input class="inp" type="number" value="72" style="width:80px;padding:4px 8px"/></td><td><span class="badge" style="background:#dbeafe;color:#1e40af">B+</span></td></tr>
+        <tr><td class="font-medium">Priya Nair</td><td>100</td><td><input class="inp" type="number" value="88" style="width:80px;padding:4px 8px"/></td><td><span class="badge" style="background:#f0fdf4;color:#14532d">A</span></td></tr>
+        <tr><td class="font-medium">Rahul Mehta</td><td>100</td><td><input class="inp" type="number" value="54" style="width:80px;padding:4px 8px"/></td><td><span class="badge" style="background:#fef3c7;color:#78350f">C</span></td></tr>
+      </tbody>
+    </table>
+    <div class="flex justify-end mt-4"><button class="btn" onclick="toast('Marks saved','success')">Save Marks</button></div>
+  </div>
+</div>
+
+<!-- COMMUNICATIONS -->
+<div id="page-communications" class="page">
+  <h1 class="text-2xl font-bold mb-5">Communication</h1>
+  <div class="card overflow-hidden" style="padding:0">
+    <div class="flex border-b overflow-x-auto" id="comm-tabs">
+      <button class="tab-btn active" onclick="ptab('comm','circulars')">📋 Circulars</button>
+      <button class="tab-btn" onclick="ptab('comm','notifs')">🔔 Notifications</button>
+      <button class="tab-btn" onclick="ptab('comm','sms')">📱 Bulk SMS</button>
+      <button class="tab-btn" onclick="ptab('comm','wa')">💬 WhatsApp</button>
+    </div>
+    <div class="p-5">
+      <div id="comm-circulars" class="tab-pane active space-y-4">
+        <div class="flex justify-between items-center"><h2 class="font-semibold">Circulars</h2><button class="btn">+ New Circular</button></div>
+        <div class="rounded-xl border p-5 space-y-3" style="background:#eff6ff;border-color:#bfdbfe">
+          <input class="inp" value="Annual Sports Day — Notice"/>
+          <div class="relative"><textarea class="inp" rows="3" style="resize:none">Dear Parents, we are pleased to announce Annual Sports Day on 15 June 2026.</textarea><button class="btn" style="position:absolute;bottom:8px;right:8px;background:#7C3AED;padding:3px 10px;font-size:11px">✨ AI Rephrase</button></div>
+          <div class="flex gap-2 justify-end"><button class="btn-w">Cancel</button><button class="btn" onclick="toast('Circular published to all parents','success')">Publish</button></div>
+        </div>
+        <div class="card"><div class="flex justify-between"><div><h3 class="font-semibold">Annual Exam Schedule Released</h3><p class="text-sm text-gray-500 mt-1">Annual exams commence from 10 June 2026…</p></div><span class="text-xs text-gray-400 shrink-0 ml-3">3 hrs ago</span></div><div class="mt-2"><span class="badge" style="background:#dbeafe;color:#1e40af">All</span></div></div>
+        <div class="card"><div class="flex justify-between"><div><h3 class="font-semibold">Fee Reminder — Term 2</h3><p class="text-sm text-gray-500 mt-1">Term 2 fees are due by 31 May 2026…</p></div><span class="text-xs text-gray-400 shrink-0 ml-3">Yesterday</span></div><div class="mt-2"><span class="badge" style="background:#fef3c7;color:#92400e">Parents</span></div></div>
+      </div>
+      <div id="comm-notifs" class="tab-pane space-y-2">
+        <div class="flex gap-4 p-4 rounded-xl border" style="background:#eff6ff;border-color:#bfdbfe"><div class="w-3 h-3 rounded-full mt-1 shrink-0" style="background:#0891B2"></div><div><p class="text-sm font-semibold">Fee Due Alert</p><p class="text-xs text-gray-500 mt-1">3 students have fees overdue by more than 30 days</p><p class="text-xs text-gray-400 mt-1">2 hrs ago</p></div></div>
+        <div class="flex gap-4 p-4 rounded-xl border border-gray-100 bg-white"><div class="w-3 h-3 rounded-full mt-1 shrink-0" style="background:#D97706"></div><div><p class="text-sm">Attendance Alert — Grade 6-B below 75% this week</p><p class="text-xs text-gray-400 mt-1">5 hrs ago</p></div></div>
+        <div class="flex gap-4 p-4 rounded-xl border border-gray-100 bg-white"><div class="w-3 h-3 rounded-full mt-1 shrink-0" style="background:#059669"></div><div><p class="text-sm">New Student Enrolled — Riya Shah in Grade 5-A</p><p class="text-xs text-gray-400 mt-1">Yesterday</p></div></div>
+      </div>
+      <div id="comm-sms" class="tab-pane space-y-4">
+        <div class="rounded-xl border p-4" style="background:#fffbeb;border-color:#fde68a"><p class="font-semibold" style="color:#92400e">⚠️ SMS Gateway Not Configured</p><p class="text-sm mt-1" style="color:#b45309">Go to Administration → SMS Configuration to connect your gateway (MSG91 / Fast2SMS).</p></div>
+        <div class="opacity-40 pointer-events-none space-y-3"><textarea class="inp" rows="3" style="resize:none" placeholder="Message text (160 chars recommended)…"></textarea><div class="flex gap-3"><select class="inp" style="width:200px"><option>All Parents</option><option>Fee Defaulters</option><option>Absentees Today</option></select><button class="btn">Send SMS</button></div></div>
+      </div>
+      <div id="comm-wa" class="tab-pane space-y-4">
+        <div class="rounded-xl border p-4" style="background:#f0fdf4;border-color:#bbf7d0"><p class="font-semibold text-green-800">WhatsApp Cloud API</p><p class="text-sm mt-1 text-green-700">Connect to send automated absent alerts to parents instantly.</p></div>
+        <div class="grid grid-cols-2 gap-4"><div><label class="text-xs font-medium text-gray-600 block mb-1">Access Token</label><input class="inp" placeholder="your-whatsapp-token"/></div><div><label class="text-xs font-medium text-gray-600 block mb-1">Phone Number ID</label><input class="inp" placeholder="your-phone-number-id"/></div></div>
+        <button class="btn" onclick="toast('WhatsApp configured','success')">Save Configuration</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TIMETABLE -->
+<div id="page-timetable" class="page">
+  <h1 class="text-2xl font-bold mb-5">Timetable</h1>
+  <div class="flex gap-3 mb-4"><select class="inp" style="width:200px"><option>Grade 5-A</option><option>Grade 6-B</option></select><button class="btn" style="background:#7C3AED" onclick="toast('AI generating timetable…','info')">✨ AI Generate</button></div>
+  <div class="card overflow-x-auto" style="padding:0">
+    <table style="font-size:12px">
+      <thead><tr><th style="width:60px">Period</th><th>Monday</th><th>Tuesday</th><th>Wednesday</th><th>Thursday</th><th>Friday</th><th>Saturday</th></tr></thead>
+      <tbody>
+        <tr><td class="text-center text-gray-400 font-medium">1</td><td><div class="rounded p-2 text-center text-xs font-medium" style="background:#dbeafe;color:#1e40af">Math</div></td><td><div class="rounded p-2 text-center text-xs font-medium" style="background:#d1fae5;color:#065f46">Science</div></td><td><div class="rounded p-2 text-center text-xs font-medium" style="background:#fce7f3;color:#9d174d">English</div></td><td><div class="rounded p-2 text-center text-xs font-medium" style="background:#fef3c7;color:#78350f">Hindi</div></td><td><div class="rounded p-2 text-center text-xs font-medium" style="background:#f0fdf4;color:#14532d">PE</div></td><td><div class="rounded p-2 text-center text-xs font-medium" style="background:#f5f3ff;color:#4c1d95">Drawing</div></td></tr>
+        <tr><td class="text-center text-gray-400 font-medium">2</td><td><div class="rounded p-2 text-center text-xs font-medium" style="background:#fce7f3;color:#9d174d">English</div></td><td><div class="rounded p-2 text-center text-xs font-medium" style="background:#dbeafe;color:#1e40af">Math</div></td><td><div class="rounded p-2 text-center text-xs font-medium" style="background:#d1fae5;color:#065f46">Science</div></td><td><div class="rounded p-2 text-center text-xs font-medium" style="background:#f0fdf4;color:#14532d">PE</div></td><td><div class="rounded p-2 text-center text-xs font-medium" style="background:#fef3c7;color:#78350f">Hindi</div></td><td><div class="rounded p-2 text-center text-xs font-medium" style="background:#dbeafe;color:#1e40af">Math</div></td></tr>
+        <tr><td colspan="7" class="text-center" style="background:#F9FAFB;color:#9CA3AF;font-size:11px;padding:5px">— Break —</td></tr>
+        <tr><td class="text-center text-gray-400 font-medium">3</td><td><div class="rounded p-2 text-center text-xs font-medium" style="background:#d1fae5;color:#065f46">Science</div></td><td><div class="rounded p-2 text-center text-xs font-medium" style="background:#fce7f3;color:#9d174d">English</div></td><td><div class="rounded p-2 text-center text-xs font-medium" style="background:#fef3c7;color:#78350f">Hindi</div></td><td><div class="rounded p-2 text-center text-xs font-medium" style="background:#dbeafe;color:#1e40af">Math</div></td><td><div class="rounded p-2 text-center text-xs font-medium" style="background:#f5f3ff;color:#4c1d95">Drawing</div></td><td><div class="rounded p-2 text-center text-xs font-medium" style="background:#d1fae5;color:#065f46">Science</div></td></tr>
+        <tr><td class="text-center text-gray-400 font-medium">4</td><td><div class="rounded p-2 text-center text-xs font-medium" style="background:#fef3c7;color:#78350f">Hindi</div></td><td><div class="rounded p-2 text-center text-xs font-medium" style="background:#f0fdf4;color:#14532d">PE</div></td><td><div class="rounded p-2 text-center text-xs font-medium" style="background:#dbeafe;color:#1e40af">Math</div></td><td><div class="rounded p-2 text-center text-xs font-medium" style="background:#fce7f3;color:#9d174d">English</div></td><td><div class="rounded p-2 text-center text-xs font-medium" style="background:#d1fae5;color:#065f46">Science</div></td><td><div class="rounded p-2 text-center text-xs font-medium" style="background:#fef3c7;color:#78350f">Hindi</div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- LIBRARY -->
+<div id="page-library" class="page">
+  <h1 class="text-2xl font-bold mb-5">Library</h1>
+  <div class="grid grid-cols-3 gap-4 mb-5">
+    <div class="card border-l-4" style="border-color:#0891B2"><p class="text-xl font-bold">1,248</p><p class="text-xs text-gray-500 mt-1">Total Books</p></div>
+    <div class="card border-l-4" style="border-color:#059669"><p class="text-xl font-bold" style="color:#059669">986</p><p class="text-xs text-gray-500 mt-1">Available</p></div>
+    <div class="card border-l-4" style="border-color:#DC2626"><p class="text-xl font-bold" style="color:#DC2626">262</p><p class="text-xs text-gray-500 mt-1">Issued</p></div>
+  </div>
+  <div class="card overflow-hidden" style="padding:0">
+    <div class="px-5 py-4 border-b flex justify-between items-center"><h3 class="font-semibold">Book Catalog</h3><button class="btn">+ Add Book</button></div>
+    <table>
+      <thead><tr><th>Title</th><th>Author</th><th>Subject</th><th>Total</th><th>Available</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td class="font-medium">Mathematics Class 10</td><td>R.D. Sharma</td><td>Math</td><td>12</td><td style="color:#059669;font-weight:600">8</td><td><button class="btn-w" style="padding:4px 10px;font-size:12px">Issue</button></td></tr>
+        <tr><td class="font-medium">Science for Class 8</td><td>Lakhmir Singh</td><td>Science</td><td>15</td><td style="color:#059669;font-weight:600">11</td><td><button class="btn-w" style="padding:4px 10px;font-size:12px">Issue</button></td></tr>
+        <tr><td class="font-medium">English Reader</td><td>NCERT</td><td>English</td><td>20</td><td style="color:#059669;font-weight:600">14</td><td><button class="btn-w" style="padding:4px 10px;font-size:12px">Issue</button></td></tr>
+        <tr><td class="font-medium">History of India</td><td>Bipan Chandra</td><td>Social</td><td>8</td><td style="color:#DC2626;font-weight:600">0</td><td><button class="btn-w" style="padding:4px 10px;font-size:12px;opacity:.5" disabled>Issue</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- PAYROLL -->
+<div id="page-payroll" class="page">
+  <h1 class="text-2xl font-bold mb-5">Payroll</h1>
+  <div class="grid grid-cols-3 gap-4 mb-5">
+    <div class="card border-l-4" style="border-color:#2563EB"><p class="text-xl font-bold">₹8,42,000</p><p class="text-xs text-gray-500 mt-1">Total Gross (May)</p></div>
+    <div class="card border-l-4" style="border-color:#059669"><p class="text-xl font-bold" style="color:#059669">₹7,28,400</p><p class="text-xs text-gray-500 mt-1">Net Payable</p></div>
+    <div class="card border-l-4" style="border-color:#DC2626"><p class="text-xl font-bold" style="color:#DC2626">₹1,13,600</p><p class="text-xs text-gray-500 mt-1">Total Deductions</p></div>
+  </div>
+  <div class="card overflow-hidden" style="padding:0">
+    <div class="px-5 py-4 border-b flex justify-between items-center"><h3 class="font-semibold">May 2026 Salary</h3><button class="btn" style="background:#DC2626" onclick="toast('Payroll processed for 4 staff','success')">▶ Run Payroll</button></div>
+    <table>
+      <thead><tr><th>Staff</th><th>Designation</th><th style="text-align:right">Basic</th><th style="text-align:right">HRA</th><th style="text-align:right">Gross</th><th style="text-align:right">Net</th><th>Payslip</th></tr></thead>
+      <tbody>
+        <tr><td class="font-medium">Ravi Shankar</td><td>Physics Teacher</td><td style="text-align:right">₹35,000</td><td style="text-align:right">₹3,500</td><td style="text-align:right;color:#2563EB;font-weight:600">₹40,250</td><td style="text-align:right;color:#059669;font-weight:600">₹36,225</td><td><button class="btn-w" style="padding:4px 10px;font-size:12px">📄 PDF</button></td></tr>
+        <tr><td class="font-medium">Lakshmi Devi</td><td>Math HOD</td><td style="text-align:right">₹45,000</td><td style="text-align:right">₹4,500</td><td style="text-align:right;color:#2563EB;font-weight:600">₹51,750</td><td style="text-align:right;color:#059669;font-weight:600">₹46,575</td><td><button class="btn-w" style="padding:4px 10px;font-size:12px">📄 PDF</button></td></tr>
+        <tr><td class="font-medium">Anita Rao</td><td>English Teacher</td><td style="text-align:right">₹32,000</td><td style="text-align:right">₹3,200</td><td style="text-align:right;color:#2563EB;font-weight:600">₹36,800</td><td style="text-align:right;color:#059669;font-weight:600">₹33,120</td><td><button class="btn-w" style="padding:4px 10px;font-size:12px">📄 PDF</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- TRANSPORT -->
+<div id="page-transport" class="page">
+  <div class="flex justify-between items-center mb-5"><h1 class="text-2xl font-bold">Transport</h1><button class="btn">+ Add Route</button></div>
+  <div class="grid grid-cols-3 gap-4 mb-5">
+    <div class="card border-l-4" style="border-color:#7C3AED"><p class="text-xl font-bold">8</p><p class="text-xs text-gray-500 mt-1">Total Routes</p></div>
+    <div class="card border-l-4" style="border-color:#0891B2"><p class="text-xl font-bold">42</p><p class="text-xs text-gray-500 mt-1">Total Stops</p></div>
+    <div class="card border-l-4" style="border-color:#059669"><p class="text-xl font-bold">312</p><p class="text-xs text-gray-500 mt-1">Students on Bus</p></div>
+  </div>
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="mod-tile"><div class="p-5"><div class="flex items-center gap-3 mb-3"><div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:#0891B218;font-size:20px">🚌</div><div><h3 class="font-bold text-sm">Route A — North</h3><p class="text-xs text-gray-500">6 stops · 48 students</p></div></div><p class="text-xs text-gray-500">🚗 KA-01-1234 · Ramesh Kumar</p></div><div class="px-5 py-2 text-xs font-semibold text-white" style="background:#0891B2">View Details →</div></div>
+    <div class="mod-tile"><div class="p-5"><div class="flex items-center gap-3 mb-3"><div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:#7C3AED18;font-size:20px">🚌</div><div><h3 class="font-bold text-sm">Route B — South</h3><p class="text-xs text-gray-500">5 stops · 36 students</p></div></div><p class="text-xs text-gray-500">🚗 KA-01-5678 · Suresh Rao</p></div><div class="px-5 py-2 text-xs font-semibold text-white" style="background:#7C3AED">View Details →</div></div>
+    <div class="mod-tile"><div class="p-5"><div class="flex items-center gap-3 mb-3"><div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:#05966918;font-size:20px">🚌</div><div><h3 class="font-bold text-sm">Route C — East</h3><p class="text-xs text-gray-500">8 stops · 62 students</p></div></div><p class="text-xs text-gray-500">🚗 KA-01-9012 · Mahesh Pillai</p></div><div class="px-5 py-2 text-xs font-semibold text-white" style="background:#059669">View Details →</div></div>
+  </div>
+</div>
+
+<!-- REPORTS -->
+<div id="page-reports" class="page">
+  <h1 class="text-2xl font-bold mb-5">Reports</h1>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+    <div class="card"><h3 class="font-semibold mb-4">Fee Outstanding by Class</h3>
+      <div class="space-y-3">
+        <div class="flex items-center gap-3"><span class="text-xs text-gray-600 w-20">Grade 5</span><div class="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden"><div class="h-full rounded-full" style="width:72%;background:#DC2626"></div></div><span class="text-xs font-semibold text-red-600 w-16 text-right">₹45,000</span></div>
+        <div class="flex items-center gap-3"><span class="text-xs text-gray-600 w-20">Grade 6</span><div class="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden"><div class="h-full rounded-full" style="width:68%;background:#DC2626"></div></div><span class="text-xs font-semibold text-red-600 w-16 text-right">₹38,000</span></div>
+        <div class="flex items-center gap-3"><span class="text-xs text-gray-600 w-20">Grade 7</span><div class="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden"><div class="h-full rounded-full" style="width:81%;background:#DC2626"></div></div><span class="text-xs font-semibold text-red-600 w-16 text-right">₹52,000</span></div>
+        <div class="flex items-center gap-3"><span class="text-xs text-gray-600 w-20">Grade 8</span><div class="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden"><div class="h-full rounded-full" style="width:64%;background:#DC2626"></div></div><span class="text-xs font-semibold text-red-600 w-16 text-right">₹41,000</span></div>
+      </div>
+      <button class="btn-w mt-4" style="font-size:12px">📥 Export CSV</button>
+    </div>
+    <div class="card"><h3 class="font-semibold mb-4">Attendance % — May</h3>
+      <div class="space-y-3">
+        <div class="flex items-center gap-3"><span class="text-xs text-gray-600 w-20">Grade 5-A</span><div class="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden"><div class="h-full rounded-full" style="width:92%;background:#059669"></div></div><span class="text-xs font-semibold w-10 text-right" style="color:#059669">92%</span></div>
+        <div class="flex items-center gap-3"><span class="text-xs text-gray-600 w-20">Grade 6-B</span><div class="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden"><div class="h-full rounded-full" style="width:88%;background:#059669"></div></div><span class="text-xs font-semibold w-10 text-right" style="color:#059669">88%</span></div>
+        <div class="flex items-center gap-3"><span class="text-xs text-gray-600 w-20">Grade 7-A</span><div class="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden"><div class="h-full rounded-full" style="width:85%;background:#D97706"></div></div><span class="text-xs font-semibold w-10 text-right" style="color:#D97706">85%</span></div>
+        <div class="flex items-center gap-3"><span class="text-xs text-gray-600 w-20">Grade 8-A</span><div class="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden"><div class="h-full rounded-full" style="width:91%;background:#059669"></div></div><span class="text-xs font-semibold w-10 text-right" style="color:#059669">91%</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FEE REPORTS -->
+<div id="page-fee-reports" class="page">
+  <h1 class="text-2xl font-bold mb-5">Fee Reports</h1>
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+    <div class="card text-center cursor-pointer hover:shadow-md"><p class="font-semibold text-sm">Daily Collection</p><p class="text-xs text-gray-400 mt-1">Today's collections</p></div>
+    <div class="card text-center cursor-pointer hover:shadow-md"><p class="font-semibold text-sm">Outstanding Fees</p><p class="text-xs text-gray-400 mt-1">Pending dues list</p></div>
+    <div class="card text-center cursor-pointer hover:shadow-md"><p class="font-semibold text-sm">Concession Report</p><p class="text-xs text-gray-400 mt-1">Discounts granted</p></div>
+    <div class="card text-center cursor-pointer hover:shadow-md"><p class="font-semibold text-sm">Class-wise Summary</p><p class="text-xs text-gray-400 mt-1">Section-wise totals</p></div>
+  </div>
+  <div class="card overflow-hidden" style="padding:0">
+    <div class="px-5 py-4 border-b flex justify-between items-center"><h3 class="font-semibold">Fee Outstanding Report</h3><button class="btn-w" style="font-size:12px">📥 Export CSV</button></div>
+    <table>
+      <thead><tr><th>Student</th><th>Class</th><th style="text-align:right">Total Due</th><th style="text-align:right">Total Paid</th><th style="text-align:right">Balance</th></tr></thead>
+      <tbody>
+        <tr><td class="font-medium">Arjun Sharma</td><td>Grade 5-A</td><td style="text-align:right">₹12,000</td><td style="text-align:right;color:#059669">₹8,000</td><td style="text-align:right;color:#DC2626;font-weight:600">₹4,000</td></tr>
+        <tr><td class="font-medium">Priya Nair</td><td>Grade 6-B</td><td style="text-align:right">₹15,000</td><td style="text-align:right;color:#059669">₹0</td><td style="text-align:right;color:#DC2626;font-weight:600">₹15,000</td></tr>
+        <tr><td class="font-medium">Aditya Kumar</td><td>Grade 8-A</td><td style="text-align:right">₹18,000</td><td style="text-align:right;color:#059669">₹6,000</td><td style="text-align:right;color:#DC2626;font-weight:600">₹12,000</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ADMINISTRATION PAGES -->
+<div id="page-a-school" class="page">
+  <h1 class="text-2xl font-bold mb-5">Administration — School Configuration</h1>
+  <div class="card">
+    <h3 class="font-semibold mb-5">School Information</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <div><label class="text-xs font-medium text-gray-500 uppercase block mb-1">School Name</label><input class="inp" value="LD Public School"/></div>
+      <div><label class="text-xs font-medium text-gray-500 uppercase block mb-1">Address</label><input class="inp" value="123 Main Road, Bangalore"/></div>
+      <div><label class="text-xs font-medium text-gray-500 uppercase block mb-1">Affiliation No.</label><input class="inp" value="530146"/></div>
+      <div><label class="text-xs font-medium text-gray-500 uppercase block mb-1">Board Type</label><select class="inp"><option>CBSE</option><option>ICSE</option><option>State Board</option><option>IGCSE</option></select></div>
+      <div><label class="text-xs font-medium text-gray-500 uppercase block mb-1">Principal Name</label><input class="inp" value="Dr. Suresh Menon"/></div>
+      <div><label class="text-xs font-medium text-gray-500 uppercase block mb-1">Year Established</label><input class="inp" value="2005"/></div>
+      <div><label class="text-xs font-medium text-gray-500 uppercase block mb-1">School Phone</label><input class="inp" value="080-12345678"/></div>
+      <div><label class="text-xs font-medium text-gray-500 uppercase block mb-1">School Email</label><input class="inp" value="info@ldpublicschool.in"/></div>
+    </div>
+    <div class="flex justify-end mt-5"><button class="btn" onclick="toast('School settings updated','success')">Save Changes</button></div>
+  </div>
+</div>
+
+<div id="page-a-academic" class="page">
+  <h1 class="text-2xl font-bold mb-5">Academic Masters</h1>
+  <div class="card mb-4" style="background:#eff6ff;border:1px solid #bfdbfe">
+    <div class="flex flex-wrap gap-3 items-end">
+      <div class="flex-1" style="min-width:140px"><label class="text-xs font-medium text-gray-600 block mb-1">Class Name</label><input class="inp" placeholder="e.g. Grade 5-A"/></div>
+      <div style="width:80px"><label class="text-xs font-medium text-gray-600 block mb-1">Grade</label><input class="inp" type="number" placeholder="5"/></div>
+      <div style="width:80px"><label class="text-xs font-medium text-gray-600 block mb-1">Section</label><input class="inp" placeholder="A"/></div>
+      <button class="btn">+ Add</button>
+    </div>
+  </div>
+  <div class="card overflow-hidden" style="padding:0">
+    <table>
+      <thead><tr><th>Class Name</th><th>Grade</th><th>Section</th><th>Teacher</th><th>Students</th></tr></thead>
+      <tbody>
+        <tr><td class="font-medium">Grade 5-A</td><td>5</td><td>A</td><td>Ravi Shankar</td><td>32</td></tr>
+        <tr><td class="font-medium">Grade 5-B</td><td>5</td><td>B</td><td>Lakshmi Devi</td><td>31</td></tr>
+        <tr><td class="font-medium">Grade 6-A</td><td>6</td><td>A</td><td>Anita Rao</td><td>34</td></tr>
+        <tr><td class="font-medium">Grade 6-B</td><td>6</td><td>B</td><td>Dinesh Patel</td><td>33</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div id="page-a-masters" class="page">
+  <h1 class="text-2xl font-bold mb-5">Preliminary Masters</h1>
+  <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
+    <div class="card cursor-pointer hover:shadow-md"><h3 class="font-semibold mb-1">Department Master</h3><p class="text-xs text-gray-500">Science, Math, English, Admin</p><p class="text-xs text-gray-400 mt-2">4 departments</p></div>
+    <div class="card cursor-pointer hover:shadow-md"><h3 class="font-semibold mb-1">Subject Master</h3><p class="text-xs text-gray-500">All subjects offered</p><p class="text-xs text-gray-400 mt-2">12 subjects configured</p></div>
+    <div class="card cursor-pointer hover:shadow-md"><h3 class="font-semibold mb-1">Holiday Master</h3><p class="text-xs text-gray-500">School holiday calendar</p><p class="text-xs text-gray-400 mt-2">18 holidays this year</p></div>
+    <div class="card cursor-pointer hover:shadow-md"><h3 class="font-semibold mb-1">Term Master</h3><p class="text-xs text-gray-500">Term 1, Term 2, Annual</p><p class="text-xs text-gray-400 mt-2">2 terms configured</p></div>
+    <div class="card cursor-pointer hover:shadow-md"><h3 class="font-semibold mb-1">House Master</h3><p class="text-xs text-gray-500">Red, Blue, Green, Yellow</p><p class="text-xs text-gray-400 mt-2">4 houses</p></div>
+    <div class="card cursor-pointer hover:shadow-md"><h3 class="font-semibold mb-1">Board Master</h3><p class="text-xs text-gray-500">CBSE / ICSE / State Board</p><p class="text-xs text-gray-400 mt-2">CBSE selected</p></div>
+  </div>
+</div>
+
+<div id="page-a-users" class="page">
+  <h1 class="text-2xl font-bold mb-5">User Management</h1>
+  <div class="card mb-4" style="background:#eff6ff;border:1px solid #bfdbfe">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div><label class="text-xs font-medium text-gray-600 block mb-1">Full Name</label><input class="inp" placeholder="User name"/></div>
+      <div><label class="text-xs font-medium text-gray-600 block mb-1">Email</label><input class="inp" type="email" placeholder="Email"/></div>
+      <div><label class="text-xs font-medium text-gray-600 block mb-1">Password</label><input class="inp" type="password" placeholder="Temp password"/></div>
+      <div><label class="text-xs font-medium text-gray-600 block mb-1">Role</label><select class="inp"><option>teacher</option><option>school_admin</option><option>parent</option></select></div>
+    </div>
+    <div class="flex justify-end mt-3"><button class="btn">+ Create User</button></div>
+  </div>
+  <div class="card overflow-hidden" style="padding:0">
+    <table>
+      <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr></thead>
+      <tbody>
+        <tr><td class="font-medium">Ravi Shankar</td><td>ravi@school.in</td><td><span class="badge" style="background:#dbeafe;color:#1e40af">teacher</span></td><td class="text-gray-400 text-xs">12 Jan 2024</td></tr>
+        <tr><td class="font-medium">Suresh Kumar</td><td>suresh@school.in</td><td><span class="badge" style="background:#fef2f2;color:#991b1b">school_admin</span></td><td class="text-gray-400 text-xs">1 Jun 2023</td></tr>
+        <tr><td class="font-medium">Lakshmi Devi</td><td>lakshmi@school.in</td><td><span class="badge" style="background:#dbeafe;color:#1e40af">teacher</span></td><td class="text-gray-400 text-xs">5 Mar 2024</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div id="page-a-roles" class="page">
+  <h1 class="text-2xl font-bold mb-5">Roles &amp; Permissions</h1>
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+    <div class="card text-center border-t-4" style="border-color:#DC2626"><p class="font-bold">Super Admin</p><p class="text-xs text-gray-500 mt-1">Full access to everything</p></div>
+    <div class="card text-center border-t-4" style="border-color:#7C3AED"><p class="font-bold">School Admin</p><p class="text-xs text-gray-500 mt-1">All school modules</p></div>
+    <div class="card text-center border-t-4" style="border-color:#0891B2"><p class="font-bold">Teacher</p><p class="text-xs text-gray-500 mt-1">Students, Attendance, Marks</p></div>
+    <div class="card text-center border-t-4" style="border-color:#059669"><p class="font-bold">Parent</p><p class="text-xs text-gray-500 mt-1">View only — child data</p></div>
+  </div>
+  <div class="card"><p class="text-sm text-gray-500">Full screen-level permission matrix will be configurable in the next release.</p></div>
+</div>
+
+<div id="page-a-holiday" class="page">
+  <h1 class="text-2xl font-bold mb-5">Holiday Calendar</h1>
+  <div class="card overflow-hidden" style="padding:0">
+    <div class="px-5 py-4 border-b flex justify-between items-center"><h3 class="font-semibold">2026 Holidays</h3><button class="btn">+ Add Holiday</button></div>
+    <table>
+      <thead><tr><th>Date</th><th>Holiday Name</th><th>Type</th></tr></thead>
+      <tbody>
+        <tr><td>26 Jan 2026</td><td class="font-medium">Republic Day</td><td><span class="badge" style="background:#dbeafe;color:#1e40af">National</span></td></tr>
+        <tr><td>14 Mar 2026</td><td class="font-medium">Holi</td><td><span class="badge" style="background:#f5f3ff;color:#5b21b6">Festival</span></td></tr>
+        <tr><td>14 Apr 2026</td><td class="font-medium">Tamil New Year</td><td><span class="badge" style="background:#f0fdf4;color:#14532d">Regional</span></td></tr>
+        <tr><td>15 Aug 2026</td><td class="font-medium">Independence Day</td><td><span class="badge" style="background:#dbeafe;color:#1e40af">National</span></td></tr>
+        <tr><td>2 Oct 2026</td><td class="font-medium">Gandhi Jayanti</td><td><span class="badge" style="background:#dbeafe;color:#1e40af">National</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- LD PLATFORM PAGES -->
+<div id="page-ld-teacher" class="page">
+  <h1 class="text-2xl font-bold mb-5">LD Platform — My Class</h1>
+  <div class="rounded-xl border p-5 mb-5" style="background:#fef2f2;border-color:#fecaca">
+    <h2 class="font-semibold mb-3" style="color:#991b1b">⚠️ Needs Attention — 3 Students</h2>
+    <table><thead><tr><th>Name</th><th>LD Type</th><th>Risk Score</th><th>Level</th></tr></thead><tbody>
+      <tr><td class="font-medium">Arjun Sharma</td><td>Dyslexia</td><td style="color:#DC2626;font-weight:600">78/100</td><td>Level 1 – Starter</td></tr>
+      <tr><td class="font-medium">Rahul Mehta</td><td>Mixed LD</td><td style="color:#DC2626;font-weight:600">65/100</td><td>Level 2 – Basic</td></tr>
+      <tr><td class="font-medium">Aditya Kumar</td><td>Dyscalculia</td><td style="color:#D97706;font-weight:600">72/100</td><td>Level 1 – Starter</td></tr>
+    </tbody></table>
+  </div>
+  <div class="card overflow-hidden" style="padding:0">
+    <div class="px-5 py-4 border-b flex justify-between items-center"><h3 class="font-semibold">Grade 5-A — LD Status</h3><span class="text-sm text-gray-500">32 students</span></div>
+    <table><thead><tr><th>Name</th><th>LD Type</th><th>Risk</th><th>Level</th><th>Streak</th></tr></thead><tbody>
+      <tr><td class="font-medium">Arjun Sharma</td><td><span class="badge" style="background:#fef2f2;color:#991b1b">Dyslexia</span></td><td style="color:#DC2626;font-weight:600">78/100</td><td>1 – Starter</td><td style="color:#f97316;font-weight:600">🔥 3</td></tr>
+      <tr><td class="font-medium">Priya Nair</td><td><span class="badge" style="background:#F3F4F6;color:#374151">Not Screened</span></td><td class="text-gray-400">—</td><td class="text-gray-400">—</td><td class="text-gray-400">0</td></tr>
+      <tr><td class="font-medium">Rahul Mehta</td><td><span class="badge" style="background:#f5f3ff;color:#5b21b6">Mixed LD</span></td><td style="color:#DC2626;font-weight:600">65/100</td><td>2 – Basic</td><td style="color:#f97316;font-weight:600">🔥 7</td></tr>
+      <tr><td class="font-medium">Meera Singh</td><td><span class="badge" style="background:#f0fdf4;color:#14532d">Not Detected</span></td><td style="color:#059669;font-weight:600">12/100</td><td>3 – Intermediate</td><td style="color:#f97316;font-weight:600">🔥 14</td></tr>
+    </tbody></table>
+  </div>
+</div>
+
+<div id="page-ld-screening" class="page">
+  <div style="max-width:520px;margin:0 auto">
+    <h1 class="text-2xl font-bold mb-5">LD Screening Quiz</h1>
+    <div class="card space-y-4">
+      <div class="flex justify-between text-sm"><span class="font-semibold text-gray-700">Question 2 of 10</span><span class="text-gray-400 badge" style="background:#ede9fe;color:#5b21b6">Phonics</span></div>
+      <div class="h-2 bg-gray-100 rounded-full overflow-hidden"><div class="h-full rounded-full" style="width:20%;background:#4F46E5"></div></div>
+      <div class="rounded-xl p-4" style="background:#EEF2FF"><p class="font-semibold">Which word rhymes with "cat"?</p></div>
+      <div class="space-y-2">
+        <button style="width:100%;text-align:left;padding:12px 16px;border-radius:10px;border:2px solid #4F46E5;background:#EEF2FF;color:#4F46E5;font-weight:600;font-size:13px;cursor:pointer">bat 🦇</button>
+        <button style="width:100%;text-align:left;padding:12px 16px;border-radius:10px;border:1px solid #E5E7EB;background:#fff;font-size:13px;cursor:pointer">dog 🐕</button>
+        <button style="width:100%;text-align:left;padding:12px 16px;border-radius:10px;border:1px solid #E5E7EB;background:#fff;font-size:13px;cursor:pointer">car 🚗</button>
+        <button style="width:100%;text-align:left;padding:12px 16px;border-radius:10px;border:1px solid #E5E7EB;background:#fff;font-size:13px;cursor:pointer">sit 🪑</button>
+      </div>
+      <button class="btn" style="width:100%;padding:12px;background:#4F46E5">Next Question →</button>
+    </div>
+  </div>
+</div>
+
+<div id="page-ld-practice" class="page">
+  <h1 class="text-2xl font-bold mb-5">Practice Exercises</h1>
+  <div class="flex gap-2 mb-4 flex-wrap">
+    <button class="btn" style="background:#4F46E5;font-size:12px;padding:6px 14px">All</button>
+    <button class="btn-w" style="font-size:12px;padding:6px 14px">🔤 Phonics</button>
+    <button class="btn-w" style="font-size:12px;padding:6px 14px">📖 Reading</button>
+    <button class="btn-w" style="font-size:12px;padding:6px 14px">✏️ Writing</button>
+    <button class="btn-w" style="font-size:12px;padding:6px 14px">🔢 Math</button>
+  </div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div class="card cursor-pointer hover:shadow-md"><div class="flex items-center gap-2 mb-3"><span style="font-size:20px">🔤</span><span class="badge" style="background:#f5f3ff;color:#4c1d95">phonics</span><span class="text-xs text-gray-400 ml-auto">L1</span></div><h3 class="font-semibold text-sm">Letter Sounds</h3><p class="text-xs text-gray-500 mt-1">Tap the letter that makes the "buh" sound</p></div>
+    <div class="card cursor-pointer hover:shadow-md"><div class="flex items-center gap-2 mb-3"><span style="font-size:20px">📖</span><span class="badge" style="background:#dbeafe;color:#1e40af">reading</span><span class="text-xs text-gray-400 ml-auto">L1</span></div><h3 class="font-semibold text-sm">Word Match</h3><p class="text-xs text-gray-500 mt-1">Match the picture to the word</p></div>
+    <div class="card cursor-pointer hover:shadow-md"><div class="flex items-center gap-2 mb-3"><span style="font-size:20px">🔢</span><span class="badge" style="background:#d1fae5;color:#065f46">math</span><span class="text-xs text-gray-400 ml-auto">L1</span></div><h3 class="font-semibold text-sm">Count Objects</h3><p class="text-xs text-gray-500 mt-1">Count the apples and choose the number</p></div>
+  </div>
+</div>
+
+<div id="page-ld-tips" class="page">
+  <div style="max-width:560px;margin:0 auto">
+    <h1 class="text-2xl font-bold mb-5">AI Learning Tips</h1>
+    <div class="space-y-3">
+      <div class="card flex gap-4 items-start"><div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style="background:#4F46E5">1</div><p class="text-sm text-gray-700 leading-relaxed">Use phonics-based reading programs with multi-sensory techniques — students with dyslexia respond well to seeing, hearing, and touching letters simultaneously.</p></div>
+      <div class="card flex gap-4 items-start"><div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style="background:#4F46E5">2</div><p class="text-sm text-gray-700 leading-relaxed">Break mathematical problems into smaller visual steps using color-coded manipulatives. Graph paper helps maintain alignment for dyscalculia students.</p></div>
+      <div class="card flex gap-4 items-start"><div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style="background:#4F46E5">3</div><p class="text-sm text-gray-700 leading-relaxed">Allow extra time for written assignments and consider oral assessments as alternatives for students with dysgraphia.</p></div>
+      <div class="card flex gap-4 items-start"><div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style="background:#4F46E5">4</div><p class="text-sm text-gray-700 leading-relaxed">Use text-to-speech tools during reading so students can focus on comprehension rather than decoding words.</p></div>
+      <div class="card flex gap-4 items-start"><div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style="background:#4F46E5">5</div><p class="text-sm text-gray-700 leading-relaxed">Celebrate small wins daily — students with LD often have low confidence. Positive reinforcement builds resilience over time.</p></div>
+      <p class="text-xs text-gray-400 text-center pt-2">✨ Generated by Claude AI based on student profile</p>
+    </div>
+  </div>
+</div>
+
+  </main>
+</div>
+</div>
+
+<script>
+// ── Page navigation ──────────────────────────────────────────────────────────
+var PAGE_LABELS = {
+  home:'Home', dashboard:'Dashboard', students:'Students', attendance:'Attendance',
+  fees:'Fee & Finance', staff:'Staff', admissions:'Front Office', exams:'Examination',
+  communications:'Communication', timetable:'Timetable', library:'Library',
+  payroll:'Payroll', transport:'Transport', reports:'Reports', 'fee-reports':'Fee Reports',
+  'a-school':'Administration', 'a-academic':'Academic Masters', 'a-masters':'Preliminary Masters',
+  'a-users':'User Management', 'a-roles':'Roles', 'a-holiday':'Holiday Calendar',
+  'ld-teacher':'LD — My Class', 'ld-screening':'Screening', 'ld-practice':'Practice','ld-tips':'AI Tips',
+};
+
+function go(name){
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  var el=document.getElementById('page-'+name);
+  if(el) el.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+  var bc=document.getElementById('bc-page');
+  if(bc) bc.textContent=PAGE_LABELS[name]||name;
+  // Init charts when dashboard opens
+  if(name==='dashboard') setTimeout(initCharts,50);
+  closeNotifs();
+}
+
+// ── Submenu toggles ──────────────────────────────────────────────────────────
+function tog(subId,el){
+  var sub=document.getElementById(subId);
+  var open=sub.classList.contains('open');
+  sub.classList.toggle('open',!open);
+  var arrId='a-'+subId.replace('s-','');
+  var arr=document.getElementById(arrId);
+  if(arr)arr.classList.toggle('r',!open);
+}
+
+// ── Tab panels ───────────────────────────────────────────────────────────────
+function ptab(group,name){
+  document.querySelectorAll('#'+group+'-tabs .tab-btn').forEach(function(b){b.classList.remove('active');});
+  var all=document.querySelectorAll('#'+group+'-tabs .tab-btn');
+  for(var i=0;i<all.length;i++){
+    if(all[i].getAttribute('onclick')&&all[i].getAttribute('onclick').indexOf("'"+name+"'")>=0){all[i].classList.add('active');break;}
+  }
+  document.querySelectorAll('[id^="'+group+'-"]').forEach(function(c){if(c.classList.contains('tab-pane'))c.classList.remove('active');});
+  var pane=document.getElementById(group+'-'+name);
+  if(pane)pane.classList.add('active');
+}
+
+// ── Sidebar ──────────────────────────────────────────────────────────────────
+var sbOpen=true;
+function toggleSB(){
+  var sb=document.getElementById('sb');
+  sbOpen=!sbOpen;
+  sb.style.width=sbOpen?'240px':'0';
+  sb.style.minWidth=sbOpen?'240px':'0';
+}
+
+// ── Toast notifications ───────────────────────────────────────────────────────
+function toast(msg,type){
+  type=type||'info';
+  var icons={success:'✅',error:'❌',info:'ℹ️'};
+  var el=document.createElement('div');
+  el.className='toast toast-'+type;
+  el.innerHTML='<span>'+icons[type]+'</span><span>'+msg+'</span>';
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(function(){
+    el.style.animation='slideOut .25s ease forwards';
+    setTimeout(function(){el.remove();},260);
+  },2800);
+}
+
+// ── Notification dropdown ─────────────────────────────────────────────────────
+function toggleNotifs(){
+  document.getElementById('notif-panel').classList.toggle('open');
+}
+function closeNotifs(){
+  document.getElementById('notif-panel').classList.remove('open');
+}
+function readNotif(el){
+  el.classList.remove('unread');
+  var dot=el.querySelector('.rounded-full');
+  if(dot) dot.style.background='#d1d5db';
+  updateNotifCount();
+}
+function markAllRead(){
+  document.querySelectorAll('.notif-item').forEach(function(n){
+    n.classList.remove('unread');
+    var d=n.querySelector('.rounded-full');if(d)d.style.background='#d1d5db';
+  });
+  updateNotifCount();
+  toast('All notifications marked as read','success');
+}
+function updateNotifCount(){
+  var c=document.querySelectorAll('.notif-item.unread').length;
+  var badge=document.getElementById('notif-count');
+  if(badge){badge.textContent=c;badge.style.display=c>0?'flex':'none';}
+}
+
+// ── Global search ─────────────────────────────────────────────────────────────
+var STUDENTS=[
+  {name:'Arjun Sharma',class:'Grade 5-A',ld:'Dyslexia',page:'students'},
+  {name:'Priya Nair',class:'Grade 6-B',ld:'Not Screened',page:'students'},
+  {name:'Rahul Mehta',class:'Grade 7-A',ld:'Mixed LD',page:'students'},
+  {name:'Sneha Patel',class:'Grade 5-B',ld:'Not Screened',page:'students'},
+  {name:'Aditya Kumar',class:'Grade 8-A',ld:'Dyscalculia',page:'students'},
+  {name:'Meera Singh',class:'Grade 6-A',ld:'Not Detected',page:'students'},
+];
+function globalSearch(val){
+  var box=document.getElementById('search-results');
+  if(!val.trim()){box.classList.add('hidden');return;}
+  var matches=STUDENTS.filter(function(s){return s.name.toLowerCase().indexOf(val.toLowerCase())>=0;});
+  if(!matches.length){box.innerHTML='<div class="px-4 py-3 text-sm text-gray-400">No results</div>';box.classList.remove('hidden');return;}
+  box.innerHTML=matches.map(function(s){
+    return '<div onclick="go(\''+s.page+'\');document.getElementById(\'global-search\').value=\'\';document.getElementById(\'search-results\').classList.add(\'hidden\')" class="flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50 cursor-pointer">'
+      +'<div class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold" style="background:#0891B2">'+s.name[0]+'</div>'
+      +'<div><p class="text-sm font-medium text-gray-900">'+s.name+'</p><p class="text-xs text-gray-400">'+s.class+' · '+s.ld+'</p></div>'
+      +'</div>';
+  }).join('');
+  box.classList.remove('hidden');
+}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('#global-search')&&!e.target.closest('#search-results')){
+    document.getElementById('search-results').classList.add('hidden');
+  }
+  if(!e.target.closest('#notif-panel')&&!e.target.closest('[onclick="toggleNotifs()"]')){
+    closeNotifs();
+  }
+});
+
+// ── Chart.js init ─────────────────────────────────────────────────────────────
+var chartsInitialized=false;
+function initCharts(){
+  if(chartsInitialized)return;
+  chartsInitialized=true;
+
+  // Attendance line chart
+  var ctx1=document.getElementById('chart-attendance');
+  if(ctx1){
+    new Chart(ctx1,{
+      type:'bar',
+      data:{
+        labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+        datasets:[
+          {label:'Present',data:[748,762,741,756,748,680,0],backgroundColor:'rgba(5,150,105,.85)',borderRadius:6},
+          {label:'Absent', data:[94,80,101,86,94,162,0],backgroundColor:'rgba(220,38,38,.7)',borderRadius:6},
+        ],
+      },
+      options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index'},
+        plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}}},
+        scales:{x:{stacked:false,grid:{display:false}},y:{grid:{color:'#f1f5f9'},ticks:{font:{size:11}}}}}
+    });
+  }
+
+  // LD Donut
+  var ctx2=document.getElementById('chart-ld');
+  if(ctx2){
+    new Chart(ctx2,{
+      type:'doughnut',
+      data:{
+        labels:['Dyslexia','Dyscalculia','Dysgraphia','Mixed'],
+        datasets:[{data:[22,12,8,5],backgroundColor:['#DC2626','#2563EB','#D97706','#7C3AED'],borderWidth:0,hoverOffset:4}],
+      },
+      options:{responsive:true,maintainAspectRatio:false,cutout:'70%',
+        plugins:{legend:{display:false}}}
+    });
+  }
+
+  // Fee bar chart
+  var ctx3=document.getElementById('chart-fees');
+  if(ctx3){
+    new Chart(ctx3,{
+      type:'bar',
+      data:{
+        labels:['Grade 1-2','Grade 3-5','Grade 6-8','Grade 9-10','Grade 11-12'],
+        datasets:[
+          {label:'Collected',data:[48000,68000,52000,44000,36000],backgroundColor:'rgba(8,145,178,.85)',borderRadius:6},
+          {label:'Outstanding',data:[12000,18000,28000,24000,32000],backgroundColor:'rgba(220,38,38,.5)',borderRadius:6},
+        ],
+      },
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}}},
+        scales:{x:{grid:{display:false}},y:{grid:{color:'#f1f5f9'},ticks:{font:{size:11},callback:function(v){return'₹'+(v/1000)+'K';}}}}}
+    });
+  }
+}
+
+// ── Action buttons wiring (attendance save, fee collect, etc.) ────────────────
+document.addEventListener('DOMContentLoaded',function(){
+  initCharts();
+  // Wire all "Save Attendance" buttons
+  document.querySelectorAll('[onclick=""]').forEach(function(b){});
+});
+</script>
+</body>
+</html>
+

@@ -1,46 +1,26 @@
-# ─── School Platform — Full-Stack Docker Compose ─────────────────────────────
-#
-# Services:
-#   postgres  → :5432  (internal only)
-#   redis     → :6379  (internal only)
-#   api       → :3000  (internal; exposed via nginx)
-#   nginx     → :80    (public entry point)
-#
-# Quick start:
-#   1. cp .env.example .env && fill in secrets
-#   2. docker compose up -d --build
-#   3. Open http://localhost
-#
-# Front-ends (ld-exam-web and school-erp-web) are built into the nginx image.
-# Run "docker compose --profile dev up" to additionally expose :5173 / :5174.
+﻿services:
 
-services:
-
-  # ── PostgreSQL ──────────────────────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
-    container_name: school_postgres
+    container_name: ldschools_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB:       ${DB_NAME:-school_erp}
+      POSTGRES_DB:       ${DB_NAME:-ldschools}
       POSTGRES_USER:     ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD required}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-school_erp}']
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-ldschools}']
       interval: 10s
       timeout: 5s
       retries: 10
 
-  # ── Redis ───────────────────────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
-    container_name: school_redis
+    container_name: ldschools_redis
     restart: unless-stopped
-    command: >
-      redis-server
-      ${REDIS_PASSWORD:+--requirepass ${REDIS_PASSWORD}}
+    command: redis-server ${REDIS_PASSWORD:+--requirepass ${REDIS_PASSWORD}}
     volumes:
       - redis_data:/data
     healthcheck:
@@ -49,48 +29,45 @@ services:
       timeout: 3s
       retries: 5
 
-  # ── Unified API ─────────────────────────────────────────────────────────────
   api:
     build:
-      context: ./packages/api
+      context: ./backend
       dockerfile: Dockerfile
-    container_name: school_api
+    container_name: ldschools_api
     restart: unless-stopped
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
     environment:
-      NODE_ENV:               ${NODE_ENV:-production}
-      PORT:                   3000
-      DATABASE_URL:           postgresql://${DB_USER:-postgres}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-school_erp}
-      DB_HOST:                postgres
-      DB_PORT:                5432
-      DB_NAME:                ${DB_NAME:-school_erp}
-      DB_USER:                ${DB_USER:-postgres}
-      DB_PASSWORD:            ${DB_PASSWORD}
-      REDIS_URL:              redis://${REDIS_PASSWORD:+:${REDIS_PASSWORD}@}redis:6379
-      JWT_SECRET:             ${JWT_SECRET:?JWT_SECRET is required}
-      ALLOWED_ORIGINS:        ${ALLOWED_ORIGINS:-http://localhost}
-      ANTHROPIC_API_KEY:      ${ANTHROPIC_API_KEY:-}
-      SUPABASE_URL:           ${SUPABASE_URL:-}
-      SUPABASE_ANON_KEY:      ${SUPABASE_ANON_KEY:-}
-      SUPABASE_SERVICE_KEY:   ${SUPABASE_SERVICE_KEY:-}
-      FIREBASE_PROJECT_ID:    ${FIREBASE_PROJECT_ID:-}
-      FIREBASE_CLIENT_EMAIL:  ${FIREBASE_CLIENT_EMAIL:-}
-      FIREBASE_PRIVATE_KEY:   ${FIREBASE_PRIVATE_KEY:-}
-      RAZORPAY_KEY_ID:        ${RAZORPAY_KEY_ID:-}
-      RAZORPAY_KEY_SECRET:    ${RAZORPAY_KEY_SECRET:-}
-      RAZORPAY_WEBHOOK_SECRET:${RAZORPAY_WEBHOOK_SECRET:-}
-      SMTP_HOST:              ${SMTP_HOST:-smtp.gmail.com}
-      SMTP_PORT:              ${SMTP_PORT:-587}
-      SMTP_USER:              ${SMTP_USER:-}
-      SMTP_PASS:              ${SMTP_PASS:-}
-      ADMIN_USERNAME:         ${ADMIN_USERNAME:-admin}
-      ADMIN_PASSWORD:         ${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}
-      GOOGLE_CLOUD_PROJECT_ID:${GOOGLE_CLOUD_PROJECT_ID:-}
-      APP_URL:                ${APP_URL:-http://localhost}
+      NODE_ENV:                production
+      PORT:                    3000
+      DATABASE_URL:            postgresql://${DB_USER:-postgres}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-ldschools}
+      DB_HOST:                 postgres
+      DB_PORT:                 5432
+      DB_NAME:                 ${DB_NAME:-ldschools}
+      DB_USER:                 ${DB_USER:-postgres}
+      DB_PASSWORD:             ${DB_PASSWORD}
+      REDIS_URL:               redis://${REDIS_PASSWORD:+:${REDIS_PASSWORD}@}redis:6379
+      JWT_SECRET:              ${JWT_SECRET:?JWT_SECRET required}
+      ALLOWED_ORIGINS:         ${ALLOWED_ORIGINS:-http://localhost}
+      ADMIN_USERNAME:          ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD:          ${ADMIN_PASSWORD:?ADMIN_PASSWORD required}
+      ANTHROPIC_API_KEY:       ${ANTHROPIC_API_KEY:-}
+      SUPABASE_URL:            ${SUPABASE_URL:-}
+      SUPABASE_ANON_KEY:       ${SUPABASE_ANON_KEY:-}
+      SUPABASE_SERVICE_KEY:    ${SUPABASE_SERVICE_KEY:-}
+      FIREBASE_PROJECT_ID:     ${FIREBASE_PROJECT_ID:-}
+      FIREBASE_CLIENT_EMAIL:   ${FIREBASE_CLIENT_EMAIL:-}
+      FIREBASE_PRIVATE_KEY:    ${FIREBASE_PRIVATE_KEY:-}
+      RAZORPAY_KEY_ID:         ${RAZORPAY_KEY_ID:-}
+      RAZORPAY_KEY_SECRET:     ${RAZORPAY_KEY_SECRET:-}
+      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
+      SMTP_HOST:               ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT:               ${SMTP_PORT:-587}
+      SMTP_USER:               ${SMTP_USER:-}
+      SMTP_PASS:               ${SMTP_PASS:-}
+      GOOGLE_CLOUD_PROJECT_ID: ${GOOGLE_CLOUD_PROJECT_ID:-}
+      APP_URL:                 ${APP_URL:-http://localhost}
     healthcheck:
       test: ['CMD-SHELL', 'wget -qO- http://localhost:3000/ping || exit 1']
       interval: 15s
@@ -98,47 +75,22 @@ services:
       retries: 5
       start_period: 30s
 
-  # ── Nginx (reverse proxy + static frontend) ─────────────────────────────────
   nginx:
     build:
       context: .
       dockerfile: infra/nginx/Dockerfile
-    container_name: school_nginx
+    container_name: ldschools_nginx
     restart: unless-stopped
     depends_on:
-      api:
-        condition: service_healthy
+      api: { condition: service_healthy }
     ports:
       - "${HTTP_PORT:-80}:80"
       - "${HTTPS_PORT:-443}:443"
     volumes:
       - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - nginx_logs:/var/log/nginx
-      # Uncomment for SSL:
-      # - /etc/letsencrypt:/etc/letsencrypt:ro
-
-  # ── Dev overrides (only active with --profile dev) ──────────────────────────
-  ld-exam-web-dev:
-    profiles: [dev]
-    build:
-      context: ./apps/ld-exam-web
-    container_name: ld_exam_web_dev
-    ports:
-      - "5173:5173"
-    environment:
-      VITE_API_URL: http://localhost:3000
-
-  school-erp-web-dev:
-    profiles: [dev]
-    build:
-      context: ./apps/school-erp-web
-    container_name: school_erp_web_dev
-    ports:
-      - "5174:5174"
-    environment:
-      VITE_API_URL: http://localhost:3000
 
 volumes:
   postgres_data:
   redis_data:
-  nginx_logs:
+
+
