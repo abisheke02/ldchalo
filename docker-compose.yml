@@ -1,73 +1,50 @@
-﻿services:
+# ─── docker-compose.yml ───────────────────────────────────────────────────────
+# PostgreSQL and Redis are hosted on Neon + Upstash (cloud, free tier).
+# Only the API + Nginx run locally via Docker.
 
-  postgres:
-    image: postgres:16-alpine
-    container_name: ldschools_postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB:       ${DB_NAME:-ldschools}
-      POSTGRES_USER:     ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD required}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-ldschools}']
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
-  redis:
-    image: redis:7-alpine
-    container_name: ldschools_redis
-    restart: unless-stopped
-    command: redis-server ${REDIS_PASSWORD:+--requirepass ${REDIS_PASSWORD}}
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
-      interval: 10s
-      timeout: 3s
-      retries: 5
+services:
 
   api:
     build:
-      context: ./backend
+      context: ./packages/api
       dockerfile: Dockerfile
-    container_name: ldschools_api
+    container_name: school_erp_api
     restart: unless-stopped
-    depends_on:
-      postgres: { condition: service_healthy }
-      redis:    { condition: service_healthy }
+    env_file: .env
     environment:
-      NODE_ENV:                production
-      PORT:                    3000
-      DATABASE_URL:            postgresql://${DB_USER:-postgres}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-ldschools}
-      DB_HOST:                 postgres
-      DB_PORT:                 5432
-      DB_NAME:                 ${DB_NAME:-ldschools}
-      DB_USER:                 ${DB_USER:-postgres}
-      DB_PASSWORD:             ${DB_PASSWORD}
-      REDIS_URL:               redis://${REDIS_PASSWORD:+:${REDIS_PASSWORD}@}redis:6379
+      NODE_ENV:       ${NODE_ENV:-development}
+      PORT:           3000
+      # ── Cloud DB connections (from .env) ─────────────────────────────────
+      NEON_DB_URL:             ${NEON_DB_URL:?NEON_DB_URL required}
+      MONGODB_URL:             ${MONGODB_URL:-}
+      MONGODB_DB_NAME:         ${MONGODB_DB_NAME:-school_erp}
+      UPSTASH_REDIS_URL:       ${UPSTASH_REDIS_URL:-}
+      DATABRICKS_HOST:         ${DATABRICKS_HOST:-}
+      DATABRICKS_TOKEN:        ${DATABRICKS_TOKEN:-}
+      DATABRICKS_HTTP_PATH:    ${DATABRICKS_HTTP_PATH:-}
+      DATABRICKS_CATALOG:      ${DATABRICKS_CATALOG:-hive_metastore}
+      DATABRICKS_SCHEMA:       ${DATABRICKS_SCHEMA:-analytics}
+      # ── App ──────────────────────────────────────────────────────────────
       JWT_SECRET:              ${JWT_SECRET:?JWT_SECRET required}
       ALLOWED_ORIGINS:         ${ALLOWED_ORIGINS:-http://localhost}
       ADMIN_USERNAME:          ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD:          ${ADMIN_PASSWORD:?ADMIN_PASSWORD required}
+      # ── Third-party ───────────────────────────────────────────────────────
       ANTHROPIC_API_KEY:       ${ANTHROPIC_API_KEY:-}
       SUPABASE_URL:            ${SUPABASE_URL:-}
-      SUPABASE_ANON_KEY:       ${SUPABASE_ANON_KEY:-}
       SUPABASE_SERVICE_KEY:    ${SUPABASE_SERVICE_KEY:-}
       FIREBASE_PROJECT_ID:     ${FIREBASE_PROJECT_ID:-}
       FIREBASE_CLIENT_EMAIL:   ${FIREBASE_CLIENT_EMAIL:-}
       FIREBASE_PRIVATE_KEY:    ${FIREBASE_PRIVATE_KEY:-}
       RAZORPAY_KEY_ID:         ${RAZORPAY_KEY_ID:-}
       RAZORPAY_KEY_SECRET:     ${RAZORPAY_KEY_SECRET:-}
-      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
       SMTP_HOST:               ${SMTP_HOST:-smtp.gmail.com}
       SMTP_PORT:               ${SMTP_PORT:-587}
       SMTP_USER:               ${SMTP_USER:-}
       SMTP_PASS:               ${SMTP_PASS:-}
       GOOGLE_CLOUD_PROJECT_ID: ${GOOGLE_CLOUD_PROJECT_ID:-}
-      APP_URL:                 ${APP_URL:-http://localhost}
+    ports:
+      - "3000:3000"
     healthcheck:
       test: ['CMD-SHELL', 'wget -qO- http://localhost:3000/ping || exit 1']
       interval: 15s
@@ -75,11 +52,36 @@
       retries: 5
       start_period: 30s
 
+  # ─── School ERP Web ──────────────────────────────────────────────────────────
+  school-erp-web:
+    build:
+      context: ./apps/school-erp-web
+      dockerfile: Dockerfile
+    container_name: school_erp_web
+    restart: unless-stopped
+    depends_on:
+      api: { condition: service_healthy }
+    environment:
+      VITE_API_URL: http://localhost:3000
+
+  # ─── LD Exam Web ─────────────────────────────────────────────────────────────
+  ld-exam-web:
+    build:
+      context: ./apps/ld-exam-web
+      dockerfile: Dockerfile
+    container_name: ld_exam_web
+    restart: unless-stopped
+    depends_on:
+      api: { condition: service_healthy }
+    environment:
+      VITE_API_URL: http://localhost:3000
+
+  # ─── Nginx (reverse proxy) ───────────────────────────────────────────────────
   nginx:
     build:
       context: .
       dockerfile: infra/nginx/Dockerfile
-    container_name: ldschools_nginx
+    container_name: school_erp_nginx
     restart: unless-stopped
     depends_on:
       api: { condition: service_healthy }
@@ -89,8 +91,4 @@
     volumes:
       - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
 
-volumes:
-  postgres_data:
-  redis_data:
-
-
+# NOTE: No local postgres or redis volumes — databases are on Neon + Upstash
