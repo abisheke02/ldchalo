@@ -1,15 +1,32 @@
 require('dotenv').config();
 
-const required = ['JWT_SECRET', 'DB_PASSWORD', 'ADMIN_PASSWORD'];
-const missing  = required.filter((k) => !process.env[k]);
-if (missing.length) {
-  console.error(`[FATAL] Missing required env vars: ${missing.join(', ')}`);
-  process.exit(1);
+// ─── Demo Mode ─────────────────────────────────────────────────────
+// If DEMO_MODE=true or required vars are missing, run without real DB/Redis
+const DEMO_MODE = process.env.DEMO_MODE === 'true' ||
+  (!process.env.JWT_SECRET && !process.env.DATABASE_URL);
+
+if (!DEMO_MODE) {
+  const required = ['JWT_SECRET', 'DB_PASSWORD', 'ADMIN_PASSWORD'];
+  const missing  = required.filter((k) => !process.env[k]);
+  if (missing.length) {
+    console.error(`[FATAL] Missing required env vars: ${missing.join(', ')}`);
+    console.error('  → Set DEMO_MODE=true to run without database');
+    process.exit(1);
+  }
+}
+
+if (DEMO_MODE) {
+  console.log('━'.repeat(60));
+  console.log('  🎮  DEMO MODE — running without real database/Redis');
+  console.log('  → All APIs return mock data. No persistence.');
+  console.log('  → Login with any credentials or use demo buttons.');
+  console.log('━'.repeat(60));
 }
 
 module.exports = {
-  port:    parseInt(process.env.PORT || '3000', 10),
-  nodeEnv: process.env.NODE_ENV || 'development',
+  port:     parseInt(process.env.PORT || '3001', 10),
+  nodeEnv:  process.env.NODE_ENV || 'development',
+  demoMode: DEMO_MODE,
 
   db: {
     url:      process.env.DATABASE_URL,
@@ -17,7 +34,7 @@ module.exports = {
     port:     parseInt(process.env.DB_PORT || '5432', 10),
     name:     process.env.DB_NAME     || 'ldschools',
     user:     process.env.DB_USER     || 'postgres',
-    password: process.env.DB_PASSWORD,
+    password: process.env.DB_PASSWORD || 'postgres',
   },
 
   redis: {
@@ -26,17 +43,17 @@ module.exports = {
   },
 
   jwt: {
-    secret:    process.env.JWT_SECRET,
+    secret:    process.env.JWT_SECRET || 'demo-secret-key-not-for-production',
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
   },
 
   cors: {
-    origins: (process.env.ALLOWED_ORIGINS || 'http://localhost:5173').split(',').map((o) => o.trim()),
+    origins: (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://localhost:3000').split(',').map((o) => o.trim()),
   },
 
   admin: {
     username: process.env.ADMIN_USERNAME || 'admin',
-    password: process.env.ADMIN_PASSWORD,
+    password: process.env.ADMIN_PASSWORD || 'admin123',
   },
 
   anthropic:  { apiKey: process.env.ANTHROPIC_API_KEY  || '' },

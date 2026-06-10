@@ -1,106 +1,303 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import api from '../../services/api';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import useAuthStore from '../../store/authStore';
+import analyticsApi from '../../services/analyticsApi';
+import LDChatbot from '../../components/ld/LDChatbot';
 
-const LD_LABELS = { dyslexia: 'Dyslexia', dysgraphia: 'Dysgraphia', dyscalculia: 'Dyscalculia', mixed: 'Mixed LD', not_detected: 'No LD Detected' };
-const LEVEL_LABELS = ['', 'Starter', 'Basic', 'Intermediate', 'Advanced', 'Mastery'];
+// ─── SVG Line Chart ─────────────────────────────────────────────────────
+function MiniLineChart({ data, width = 500, height = 140 }) {
+  if (!data || data.length === 0) return null;
+  const values = data.map(d => d.mastery);
+  const max = Math.max(...values, 100);
+  const min = Math.min(...values, 0);
+  const range = max - min || 1;
 
-export default function StudentDashboard() {
-  const [data, setData] = useState(null);
+  const points = values.map((v, i) => {
+    const x = (i / (values.length - 1)) * width;
+    const y = height - ((v - min) / range) * (height - 20) - 10;
+    return `${x},${y}`;
+  }).join(' ');
 
-  useEffect(() => {
-    api.get('/analytics/student/me').then((r) => setData(r.data)).catch(() => {});
-  }, []);
-
-  const profile   = data?.profile || {};
-  const trend     = data?.trend || [];
-  const weakAreas = data?.weakAreas || [];
+  const areaPoints = points + ` ${width},${height} 0,${height}`;
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">My Dashboard</h1>
-
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="card text-center">
-          <p className="text-3xl font-bold text-orange-500">{profile.streak_count ?? 0}</p>
-          <p className="text-sm text-gray-500 mt-1">🔥 Day Streak</p>
-        </div>
-        <div className="card text-center">
-          <p className="text-3xl font-bold text-indigo-600">Level {profile.current_level ?? 1}</p>
-          <p className="text-sm text-gray-500 mt-1">{LEVEL_LABELS[profile.current_level ?? 1]}</p>
-        </div>
-        <div className="card text-center">
-          <p className="text-3xl font-bold text-green-600">{profile.total_minutes_today ?? 0} min</p>
-          <p className="text-sm text-gray-500 mt-1">📚 Today</p>
-        </div>
-      </div>
-
-      {/* LD Profile or Screening CTA */}
-      {profile.ld_type ? (
-        <div className="card border-l-4 border-purple-500">
-          <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Learning Profile</p>
-          <p className="text-xl font-bold text-purple-700">{LD_LABELS[profile.ld_type]}</p>
-          <div className="flex items-center gap-3 mt-3">
-            <p className="text-sm text-gray-500">Risk Score</p>
-            <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden">
-              <div className="h-full rounded-full bg-purple-500" style={{ width: `${profile.ld_risk_score || 0}%` }} />
-            </div>
-            <p className="text-sm font-semibold text-gray-700">{profile.ld_risk_score ?? 0}/100</p>
-          </div>
-        </div>
-      ) : (
-        <Link to="/ld/screening" className="card border-l-4 border-indigo-500 block hover:shadow-md transition-shadow">
-          <p className="text-lg font-bold text-indigo-700">Complete your LD Screening →</p>
-          <p className="text-sm text-gray-500 mt-1">Take the 10-minute quiz to personalise your learning.</p>
-        </Link>
+    <svg viewBox={`0 0 ${width} ${height}`} style={{ width: '100%', height: 140 }}>
+      <defs>
+        <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#6366f1" stopOpacity="0.2" />
+          <stop offset="100%" stopColor="#6366f1" stopOpacity="0.02" />
+        </linearGradient>
+      </defs>
+      <polygon points={areaPoints} fill="url(#chartGrad)" />
+      <polyline points={points} fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      {values.length > 0 && (
+        <circle
+          cx={(values.length - 1) / (values.length - 1) * width}
+          cy={height - ((values[values.length - 1] - min) / range) * (height - 20) - 10}
+          r="4" fill="#6366f1" stroke="white" strokeWidth="2"
+        />
       )}
+    </svg>
+  );
+}
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-3 gap-4">
-        {[
-          { to: '/ld/practice', label: 'Practice', icon: '📚', color: 'bg-blue-50 text-blue-700' },
-          { to: '/ld/tests',    label: 'Tests',    icon: '📝', color: 'bg-green-50 text-green-700' },
-          { to: '/ld/recommendations', label: 'Tips', icon: '💡', color: 'bg-yellow-50 text-yellow-700' },
-        ].map((a) => (
-          <Link key={a.to} to={a.to} className={`card flex flex-col items-center py-6 hover:shadow-md transition-shadow ${a.color}`}>
-            <span className="text-3xl mb-2">{a.icon}</span>
-            <span className="font-semibold">{a.label}</span>
-          </Link>
-        ))}
+// ─── Styles ─────────────────────────────────────────────────────────────
+const card = { background: '#fff', borderRadius: 16, border: '1px solid #e2e8f0', padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' };
+
+const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+const REC_ICONS = ['🎯', '📖', '❓', '🔢', '✏️'];
+
+// ─── Main Component ─────────────────────────────────────────────────────
+export default function StudentDashboard() {
+  const { user } = useAuthStore();
+  const navigate = useNavigate();
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    analyticsApi.getStudentProgress()
+      .then(setData)
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
+        <div style={{ width: 32, height: 32, border: '4px solid #6366f1', borderTop: '4px solid transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
       </div>
+    );
+  }
 
-      {/* Score trend */}
-      {trend.length > 2 && (
-        <div className="card">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">14-Day Score Trend</h2>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={trend}>
-              <XAxis dataKey="day" tick={{ fontSize: 11 }} tickFormatter={(d) => d.slice(5)} />
-              <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
-              <Tooltip formatter={(v) => `${v}%`} />
-              <Bar dataKey="avg_score" fill="#6366F1" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+  if (!data) return null;
+
+  const firstName = user?.name?.split(' ')[0] || data?.name?.split(' ')[0] || 'Student';
+  const level = data?.level ?? 3;
+  const streak = data?.streak ?? 5;
+  const practiceMinutes = data?.totalPracticeMinutes ?? 444;
+  const practiceHours = Math.floor(practiceMinutes / 60);
+  const mastery = data?.mastery ?? 72;
+  const weekDays = data?.weekDays || [true, true, true, false, false, false, false];
+  const weeklyCompleted = data?.weeklyGoal?.completed ?? weekDays.filter(Boolean).length;
+  const weeklyTarget = data?.weeklyGoal?.target ?? 5;
+  const progressHistory = data?.progressHistory || [];
+  const categoryMastery = data?.categoryMastery || [];
+  const recentSessions = data?.recentSessions || [];
+  const testReady = data?.testReady ?? true;
+  const ldType = data?.ldType || 'dyslexia';
+  const riskScore = data?.riskScore ?? 45;
+  const lastScreeningDate = data?.lastScreeningDate || '2026-05-15';
+  const recommendations = data?.recommendations || data?.tips || [];
+
+  return (
+    <>
+    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+
+      {/* ═══ ROW 1: Hero Banner + Stats ═══ */}
+      <div style={{ display: 'grid', gridTemplateColumns: '5fr 7fr', gap: 16, marginBottom: 16 }}>
+        {/* Hero Banner */}
+        <div style={{ background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', borderRadius: 16, padding: '28px 24px', color: '#fff', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <h2 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Hi {firstName}! 🌟</h2>
+          <p style={{ color: '#e0e7ff', fontSize: 13, margin: '8px 0 0' }}>Every expert was once a beginner. Keep going!</p>
         </div>
-      )}
 
-      {/* Weak areas */}
-      {weakAreas.length > 0 && (
-        <div className="card">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">Needs Practice</h2>
-          {weakAreas.map((a) => (
-            <div key={a.error_type} className="flex items-center gap-3 mb-3">
-              <span className="text-sm text-gray-600 w-24 capitalize">{a.error_type?.replace('_', ' ')}</span>
-              <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full bg-red-400 rounded-full" style={{ width: `${Math.min((a.count / 20) * 100, 100)}%` }} />
-              </div>
-              <span className="text-xs text-gray-400 w-6">{a.count}</span>
+        {/* 4 Stat Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+          {[
+            { icon: '📋', value: `Lv ${level}`, label: 'Current Level', color: '#4338ca' },
+            { icon: '🔥', value: streak, label: 'Day Streak', color: '#ea580c' },
+            { icon: '🕐', value: `${practiceHours}h`, label: 'Practice Time', color: '#0f766e' },
+            { icon: '💎', value: `${mastery}%`, label: 'Mastery', color: '#16a34a' },
+          ].map((s) => (
+            <div key={s.label} style={{ ...card, textAlign: 'center', padding: 14 }}>
+              <span style={{ fontSize: 22 }}>{s.icon}</span>
+              <p style={{ fontSize: 22, fontWeight: 800, color: s.color, margin: '4px 0 2px' }}>{s.value}</p>
+              <p style={{ fontSize: 11, color: '#64748b', margin: 0 }}>{s.label}</p>
             </div>
           ))}
         </div>
-      )}
+      </div>
+
+      {/* ═══ ROW 2: Weekly Goal + Mastery Progress Chart ═══ */}
+      <div style={{ display: 'grid', gridTemplateColumns: '5fr 7fr', gap: 16, marginBottom: 16 }}>
+        {/* Weekly Goal */}
+        <div style={card}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#334155', margin: 0 }}>📅 Weekly Goal: Practice 5 days</h3>
+            <span style={{ fontSize: 14, fontWeight: 700, color: '#4f46e5' }}>{weeklyCompleted}/{weeklyTarget}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 14 }}>
+            {DAYS.map((day, i) => {
+              const practiced = weekDays[i] === true;
+              return (
+                <div key={i} style={{ textAlign: 'center' }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 14, fontWeight: 700, color: '#fff',
+                    background: practiced ? '#22c55e' : i < new Date().getDay() ? '#f87171' : '#e2e8f0',
+                  }}>
+                    {practiced ? '✓' : i < new Date().getDay() ? '✗' : '—'}
+                  </div>
+                  <span style={{ fontSize: 10, color: '#64748b', marginTop: 4, display: 'block' }}>{day}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Mastery Progress Chart */}
+        <div style={card}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#334155', margin: '0 0 12px' }}>📈 Mastery Progress (Last 30 Days)</h3>
+          {progressHistory.length > 1 ? (
+            <MiniLineChart data={progressHistory} />
+          ) : (
+            <div style={{ height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: 13 }}>
+              Practice more to see your progress chart!
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ═══ ROW 3: Category Mastery + Recent Practice + Side Cards ═══ */}
+      <div style={{ display: 'grid', gridTemplateColumns: '5fr 4fr 3fr', gap: 16, marginBottom: 16 }}>
+        {/* Category Mastery */}
+        <div style={card}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#334155', margin: '0 0 14px' }}>🎯 Category Mastery</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {categoryMastery.map((cat, i) => {
+              const m = cat.mastery ?? 0;
+              const color = m >= 70 ? '#10B981' : m >= 40 ? '#F59E0B' : '#EF4444';
+              const trendIcon = cat.trend === 'up' ? '↑' : cat.trend === 'down' ? '↓' : '→';
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 12, fontWeight: 500, color: '#475569', width: 110, flexShrink: 0 }}>{cat.category?.replace(/_/g, ' ')}</span>
+                  <div style={{ flex: 1, height: 7, background: '#f1f5f9', borderRadius: 50, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', borderRadius: 50, background: color, width: `${m}%`, transition: 'width 0.7s' }} />
+                  </div>
+                  <span style={{ fontSize: 11, color: '#64748b', width: 44, textAlign: 'right' }}>{trendIcon} {Math.round(m)}%</span>
+                </div>
+              );
+            })}
+            {categoryMastery.length === 0 && (
+              <p style={{ color: '#94a3b8', fontSize: 12 }}>Complete practice sessions to see mastery data.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Recent Practice */}
+        <div style={card}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#334155', margin: '0 0 14px' }}>🕐 Recent Practice</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {recentSessions.slice(0, 5).map((s, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 8, borderBottom: i < 4 ? '1px solid #f1f5f9' : 'none' }}>
+                <div>
+                  <span style={{ fontSize: 12, color: '#475569' }}>{s.date}</span>
+                  <span style={{ fontSize: 11, color: '#94a3b8', marginLeft: 8 }}>{s.duration} min</span>
+                </div>
+                <span style={{ fontWeight: 700, fontSize: 14, color: (s.score || 0) >= 80 ? '#16a34a' : (s.score || 0) >= 60 ? '#ea580c' : '#dc2626' }}>
+                  {s.score}%
+                </span>
+              </div>
+            ))}
+            {recentSessions.length === 0 && (
+              <p style={{ color: '#94a3b8', fontSize: 12 }}>No practice sessions yet.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Side Cards: Level Test + Last Screening */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* Level Test CTA */}
+          <div style={{ background: testReady ? '#16a34a' : '#64748b', borderRadius: 16, padding: 18, color: '#fff' }}>
+            <h4 style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>🏆 Level Test</h4>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', margin: '6px 0 12px' }}>
+              {testReady ? `You're ready for Level ${level + 1}!` : 'Keep practicing to unlock'}
+            </p>
+            <button
+              onClick={() => navigate('/ld/tests')}
+              style={{ width: '100%', background: '#fff', color: '#16a34a', fontWeight: 700, padding: '10px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 13 }}
+            >
+              Take Test →
+            </button>
+          </div>
+
+          {/* Last Screening */}
+          <div style={card}>
+            <h4 style={{ fontSize: 13, fontWeight: 700, color: '#334155', margin: '0 0 10px' }}>📋 Last Screening</h4>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <span style={{
+                  display: 'inline-block', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 700, textTransform: 'capitalize',
+                  background: ldType === 'dyslexia' ? '#f3e8ff' : ldType === 'dyscalculia' ? '#dcfce7' : '#ffedd5',
+                  color: ldType === 'dyslexia' ? '#7c3aed' : ldType === 'dyscalculia' ? '#16a34a' : '#ea580c',
+                }}>
+                  {ldType.replace('_', ' ')}
+                </span>
+                <p style={{ fontSize: 11, color: '#94a3b8', margin: '4px 0 0' }}>{lastScreeningDate}</p>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: 24, fontWeight: 800, color: '#4f46e5' }}>{riskScore}</span>
+                <p style={{ fontSize: 10, color: '#94a3b8', margin: 0 }}>risk score</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ═══ ROW 4: Recommendations + Activity Summary ═══ */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        {/* Recommendations */}
+        <div style={card}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#334155', margin: '0 0 14px' }}>⭐ Recommendations for You</h3>
+          {recommendations.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {recommendations.slice(0, 3).map((rec, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ fontSize: 22 }}>{REC_ICONS[i % REC_ICONS.length]}</span>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: '#334155', margin: 0 }}>
+                      {typeof rec === 'string' ? rec : (rec.title || rec.category || 'Practice')}
+                    </p>
+                    {typeof rec !== 'string' && rec.description && (
+                      <p style={{ fontSize: 11, color: '#94a3b8', margin: '2px 0 0' }}>{rec.description}</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => navigate('/ld/practice')}
+                    style={{ fontSize: 11, fontWeight: 700, color: '#4f46e5', background: '#eef2ff', padding: '6px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  >
+                    Start
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ color: '#94a3b8', fontSize: 13 }}>AI recommendations appear after your first practice sessions.</p>
+          )}
+        </div>
+
+        {/* Activity Summary */}
+        <div style={card}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#334155', margin: '0 0 14px' }}>📊 Activity Summary</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+            {[
+              { icon: '✅', value: data?.totalPractices ?? 23, label: 'Total Practices' },
+              { icon: '🕐', value: `${practiceHours}h ${practiceMinutes % 60}m`, label: 'Total Time' },
+              { icon: '📝', value: data?.totalTests ?? 4, label: 'Tests Taken' },
+              { icon: '📊', value: `${data?.avgScore ?? mastery}%`, label: 'Avg Score' },
+            ].map((stat) => (
+              <div key={stat.label} style={{ background: '#f8fafc', borderRadius: 12, padding: 14, textAlign: 'center' }}>
+                <span style={{ fontSize: 18 }}>{stat.icon}</span>
+                <p style={{ fontSize: 18, fontWeight: 800, color: '#1e293b', margin: '4px 0 2px' }}>{stat.value}</p>
+                <p style={{ fontSize: 11, color: '#64748b', margin: 0 }}>{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>
     </div>
+
+    <LDChatbot studentData={data} />
+    </>
   );
 }

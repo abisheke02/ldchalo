@@ -22,10 +22,15 @@ const SchoolDashboard = lazy(() => import('./pages/school/DashboardPage'));
 // ─── LD Platform ─────────────────────────────────────────────────────────────
 const StudentDashboard    = lazy(() => import('./pages/ld/StudentDashboard'));
 const TeacherDashboard    = lazy(() => import('./pages/ld/TeacherDashboard'));
+const StudentReport       = lazy(() => import('./pages/ld/StudentReport'));
 const ParentScorecard     = lazy(() => import('./pages/ld/ParentScorecard'));
 const ScreeningPage       = lazy(() => import('./pages/ld/ScreeningPage'));
+const ScreeningHistory    = lazy(() => import('./pages/ld/ScreeningHistory'));
 const PracticePage        = lazy(() => import('./pages/ld/PracticePage'));
+const PracticeSession     = lazy(() => import('./pages/ld/PracticeSession'));
 const TestsPage           = lazy(() => import('./pages/ld/TestsPage'));
+const TestSession         = lazy(() => import('./pages/ld/TestSession'));
+const TestCertificate     = lazy(() => import('./pages/ld/TestCertificate'));
 const RecommendationsPage = lazy(() => import('./pages/ld/RecommendationsPage'));
 const AdminDashboard      = lazy(() => import('./pages/admin/AdminDashboard'));
 
@@ -467,10 +472,16 @@ export default function App() {
           {/* ── LD Platform ── */}
           <Route path="ld/student"          element={r(StudentDashboard,    ['student'])} />
           <Route path="ld/teacher"          element={r(TeacherDashboard,    ['teacher','school_admin'])} />
+          <Route path="ld/teacher/student/:studentId" element={r(StudentReport, ['teacher','school_admin'])} />
+          <Route path="ld/admin-analytics"  element={r(lazy(() => import('./pages/ld/AdminDashboard')), ['school_admin','super_admin'])} />
           <Route path="ld/parent"           element={r(ParentScorecard,     ['parent'])} />
           <Route path="ld/screening"        element={r(ScreeningPage,       ['student'])} />
+          <Route path="ld/screening/history" element={r(ScreeningHistory,   ['student','teacher','parent','school_admin'])} />
           <Route path="ld/practice"         element={r(PracticePage,        ['student'])} />
+          <Route path="ld/practice/session" element={r(PracticeSession,     ['student'])} />
           <Route path="ld/tests"            element={r(TestsPage,           ['student'])} />
+          <Route path="ld/tests/session"     element={r(TestSession,         ['student'])} />
+          <Route path="ld/tests/certificate" element={r(TestCertificate,     ['student'])} />
           <Route path="ld/recommendations"  element={r(RecommendationsPage, ['student','teacher','parent'])} />
 
           {/* Super Admin */}

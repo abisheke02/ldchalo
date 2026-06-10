@@ -6,7 +6,9 @@
   "private": true,
   "scripts": {
     "start": "node src/index.js",
-    "dev":   "nodemon src/index.js"
+    "dev":   "nodemon src/index.js",
+    "demo":  "cross-env DEMO_MODE=true node src/index.js",
+    "demo:dev": "cross-env DEMO_MODE=true nodemon src/index.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk":   "^0.32.1",

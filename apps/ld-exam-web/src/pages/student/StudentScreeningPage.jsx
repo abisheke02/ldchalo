@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import useAuthStore from '../../services/authStore';
@@ -263,10 +263,59 @@ const StudentScreeningPage = () => {
             )}
           </div>
 
+          {/* Risk Breakdown Bars */}
+          {result.breakdown && (
+            <div className="bg-slate-50 rounded-xl p-4">
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Risk Breakdown</p>
+              <div className="space-y-3">
+                {Object.entries(result.breakdown).map(([key, value]) => (
+                  <div key={key}>
+                    <div className="flex justify-between text-xs font-semibold text-slate-600 mb-1">
+                      <span className="capitalize">{key}</span>
+                      <span>{value}%</span>
+                    </div>
+                    <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-1000 ${
+                          key === 'dyslexia' ? 'bg-purple-500' :
+                          key === 'dysgraphia' ? 'bg-orange-500' : 'bg-green-500'
+                        }`}
+                        style={{ width: `${value}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* AI Reasoning */}
           {result.reasoning && (
             <div className="bg-slate-50 rounded-xl p-4">
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Analysis</p>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">{result.classifiedBy === 'ai' ? '🤖 AI Analysis' : '📊 Analysis'}</p>
               <p className="text-sm text-slate-700 leading-relaxed">{result.reasoning}</p>
+              {result.classifiedBy && (
+                <span className={`inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded ${
+                  result.classifiedBy === 'ai' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
+                }`}>
+                  {result.classifiedBy === 'ai' ? '🤖 Classified by AI' : '📏 Rule-based classification'}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* AI Recommendations */}
+          {result.recommendations && result.recommendations.length > 0 && (
+            <div>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">💡 AI Recommendations</p>
+              <div className="space-y-2">
+                {result.recommendations.map((rec, i) => (
+                  <div key={i} className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl p-3">
+                    <span className="text-blue-600 text-sm flex-shrink-0">{['🎯', '🎲', '📱', '⭐', '📚'][i % 5]}</span>
+                    <p className="text-sm text-blue-800 leading-snug">{rec}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

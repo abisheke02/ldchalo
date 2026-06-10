@@ -256,3 +256,36 @@ Supabase and Firebase are free-tier cloud services — you don't need to self-ho
 - [ ] Verify Razorpay test keys → switch to live keys
 - [ ] Set GitHub Actions secrets: DB_PASSWORD, JWT_SECRET, ADMIN_PASSWORD, SSH keys
 - [ ] Send first parent scorecard links to pilot families
+
+---
+
+## Master Plan Gap Analysis (2026-06-10)
+
+Audit of `LD_Platform_Master_Project_Plan.pdf` against the current codebase. ~75% of the plan
+is implemented. All planned DB tables exist (users, students, schools, classes,
+class_students, screening_sessions, practice_sessions, test_attempts, student_errors,
+error_patterns, daily_stats, level_history, exercises, test_questions, ai_recommendations,
+notifications, messages, offline_sync_queue). Claude AI integration covers LD classification,
+error pattern detection, recommendations, and question variant generation. Google Cloud
+TTS/STT are live. 5-level test system with 70% unlock threshold works.
+
+### Remaining gaps (ranked by core importance)
+
+- [x] **AI feedback on wrong answers (FR-05, plan §5.5)** — DONE. `claudeService.js`
+      generates `{feedback_text, memory_hook}` (warm, Grade-3-English, "b faces right, d
+      faces left" style hooks) on wrong answers. Wired into `practiceEngine.submitAnswer`
+      (`/api/practice/answer`, `/api/ld/practice/answer`) and `ld/tests.js` (`/submit` →
+      `review[].feedback`). Frontend shows it via `FeedbackCard` in `PracticeSession.jsx`
+      and the "Let's review" section in `TestsPage.jsx`. `ANTHROPIC_API_KEY` now set.
+- [ ] **Firebase Phone OTP login (FR-01)** — config exists (`env.js`) but no OTP flow wired
+      for students/parents; only email+password and demo login work in `web/`.
+- [ ] **Teacher 3-day inactivity alert (FR-08)** — no cron/route notifies a teacher when a
+      student hasn't logged in for 3+ days.
+- [ ] **Weekly recommendations cron (FR-06)** — scheduled but stubbed
+      (`console.log("Would generate...")`); doesn't call Claude or write to
+      `ai_recommendations` on a weekly cadence.
+- [x] **Adaptive practice engine (FR-03)** — DONE. `practiceEngine.js` +
+      `exerciseSelector.js` + `spacedRepetition.js` implement level up/down on 3
+      consecutive correct / 2 consecutive wrong, spaced-repetition review scheduling
+      (SM-2-style), and LD-type-targeted exercise selection. Not a full Elo rating, but
+      meets the adaptive-difficulty requirement.

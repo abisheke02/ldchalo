@@ -11,11 +11,13 @@ const Razorpay = require('razorpay');
 const pool = require('../../config/database');
 const { requireAuth, requireRole } = require('../../middleware/auth');
 
-// Initialize Razorpay instance
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET
-});
+// Initialize Razorpay instance (optional — skips if keys not set)
+let razorpay = null;
+try {
+  if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+    razorpay = new Razorpay({ key_id: process.env.RAZORPAY_KEY_ID, key_secret: process.env.RAZORPAY_KEY_SECRET });
+  }
+} catch { /* Razorpay not configured */ }
 
 /**
  * #163 POST /payments/create-order

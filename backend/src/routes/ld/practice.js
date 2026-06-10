@@ -1,14 +1,151 @@
+/**
+ * LD Practice Routes — Adaptive Practice Engine (FR-03)
+ * Enhanced with adaptive difficulty, spaced repetition, and AI feedback.
+ *
+ * Routes:
+ *   GET  /api/ld/practice/start          — Start adaptive session
+ *   GET  /api/ld/practice/next-exercise   — Get next adaptive exercise
+ *   POST /api/ld/practice/answer          — Submit answer (returns AI feedback)
+ *   POST /api/ld/practice/complete        — End session
+ *   GET  /api/ld/practice/progress        — Overall progress
+ *   GET  /api/ld/practice/history         — Past sessions
+ *   GET  /api/ld/practice/streak          — Streak info
+ *   GET  /api/ld/practice/exercises       — Get exercises (legacy/direct)
+ *   POST /api/ld/practice/sessions/sync   — Offline sync
+ */
+
 const router = require('express').Router();
 const { v4: uuid } = require('uuid');
 const { query } = require('../../config/database');
 const { requireAuth } = require('../../middleware/auth');
+const practiceEngine = require('../../services/practiceEngine');
 
-// Get exercises by type
+// ═══════════════════════════════════════════════════════════════════
+// ADAPTIVE ENGINE ROUTES (NEW — FR-03)
+// ═══════════════════════════════════════════════════════════════════
+
+// GET /start — Start an adaptive practice session
+router.get('/start', requireAuth, async (req, res, next) => {
+  try {
+    const result = await practiceEngine.startSession(req.user.id);
+    res.json({
+      ...result,
+      message: result.resumed
+        ? 'Resuming your practice session'
+        : "Practice session started! Let's go! 🚀",
+    });
+  } catch (err) { next(err); }
+});
+
+// GET /next-exercise — Get next adaptive exercise in active session
+router.get('/next-exercise', requireAuth, async (req, res, next) => {
+  try {
+    const { sessionId } = req.query;
+    if (!sessionId) {
+      return res.status(400).json({ error: 'sessionId query parameter is required' });
+    }
+
+    const result = await practiceEngine.getNextExercise(sessionId, req.user.id);
+    if (result.complete) {
+      return res.json({
+        complete: true,
+        totalAnswered: result.totalAnswered,
+        message: 'Great job! You finished all exercises! 🎉',
+      });
+    }
+    res.json(result);
+  } catch (err) { next(err); }
+});
+
+// POST /answer — Submit an answer for the current exercise
+router.post('/answer', requireAuth, async (req, res, next) => {
+  try {
+    const { sessionId, exerciseId, answer, durationSeconds } = req.body;
+    if (!sessionId || !exerciseId || answer === undefined) {
+      return res.status(400).json({ error: 'sessionId, exerciseId, and answer are required' });
+    }
+
+    const result = await practiceEngine.submitAnswer(
+      sessionId, req.user.id, exerciseId, answer, durationSeconds || 0
+    );
+
+    // Encouraging response messages
+    let message = '';
+    if (result.isCorrect) {
+      const msgs = ['Correct! 🌟', 'Great job! ⭐', 'You got it! 🎯', 'Wonderful! ✨', 'Perfect! 💫'];
+      message = msgs[Math.floor(Math.random() * msgs.length)];
+      if (result.streak >= 3) message += ` ${result.streak} in a row! 🔥`;
+    } else {
+      message = "Almost! Let's learn from this 💡";
+    }
+
+    if (result.levelChange?.levelChanged) {
+      if (result.levelChange.direction === 'up') {
+        message = `🎉 LEVEL UP! You're now Level ${result.levelChange.toLevel}! Keep shining! ⭐`;
+      } else {
+        message = "Let's practice a bit more at this level — you're doing great! 💪";
+      }
+    }
+
+    res.json({ ...result, message });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message });
+    next(err);
+  }
+});
+
+// POST /complete — End the session, store stats
+router.post('/complete', requireAuth, async (req, res, next) => {
+  try {
+    const { sessionId } = req.body;
+    if (!sessionId) return res.status(400).json({ error: 'sessionId is required' });
+
+    const result = await practiceEngine.completeSession(sessionId, req.user.id);
+
+    let message = 'Practice complete! ';
+    if (result.accuracy >= 80) message += "Amazing work — you're a star! 🌟";
+    else if (result.accuracy >= 60) message += 'Good effort! Keep practicing! 💪';
+    else message += 'Great try! Every practice makes you stronger! 🌱';
+
+    res.json({ ...result, message });
+  } catch (err) { next(err); }
+});
+
+// GET /progress — Overall progress (level, streak, mastery)
+router.get('/progress', requireAuth, async (req, res, next) => {
+  try {
+    const progress = await practiceEngine.getProgress(req.user.id);
+    res.json(progress);
+  } catch (err) { next(err); }
+});
+
+// GET /history — Past sessions
+router.get('/history', requireAuth, async (req, res, next) => {
+  try {
+    const limit = parseInt(req.query.limit, 10) || 20;
+    const sessions = await practiceEngine.getHistory(req.user.id, limit);
+    res.json({ sessions });
+  } catch (err) { next(err); }
+});
+
+// GET /streak — Streak info with last 7 days
+router.get('/streak', requireAuth, async (req, res, next) => {
+  try {
+    const streak = await practiceEngine.getStreak(req.user.id);
+    res.json(streak);
+  } catch (err) { next(err); }
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// LEGACY ROUTES (backward-compatible)
+// ═══════════════════════════════════════════════════════════════════
+
+// GET /exercises — Get exercises by type/level (direct fetch)
 router.get('/exercises', requireAuth, async (req, res, next) => {
   try {
     const { type, level } = req.query;
-    const student = (await query('SELECT current_level FROM students WHERE user_id=$1', [req.user.id])).rows[0];
-    const targetLevel = level || student?.current_level || 1;
+    const state = await practiceEngine.getStudentState(req.user.id);
+    const targetLevel = level || state?.current_level || 1;
 
     const vals = [targetLevel];
     const typeFilter = type ? `AND type=$${vals.push(type)}` : '';
@@ -22,7 +159,7 @@ router.get('/exercises', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Start practice session
+// POST /sessions/start — Legacy session start (simple)
 router.post('/sessions/start', requireAuth, async (req, res, next) => {
   try {
     const { session_type = 'practice' } = req.body;
@@ -35,7 +172,7 @@ router.post('/sessions/start', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Record attempt within session
+// POST /sessions/:sessionId/attempt — Legacy attempt recording
 router.post('/sessions/:sessionId/attempt', requireAuth, async (req, res, next) => {
   try {
     const { exercise_id, user_answer, correct_answer, score, duration_seconds, error_type } = req.body;
@@ -56,28 +193,11 @@ router.post('/sessions/:sessionId/attempt', requireAuth, async (req, res, next) 
       );
     }
 
-    // Adaptive: update level if enough data
-    const { rows: stats } = await query(
-      `SELECT ROUND(AVG(score),0) AS avg_score, COUNT(*)::int AS cnt
-       FROM practice_session_exercises pse
-       JOIN practice_sessions ps ON ps.id = pse.session_id
-       WHERE ps.user_id=$1 AND ps.created_at > NOW() - INTERVAL '7 days'`,
-      [req.user.id]
-    );
-    const avg = Number(stats[0]?.avg_score);
-    if (stats[0]?.cnt >= 10) {
-      if (avg >= 80) {
-        await query('UPDATE students SET current_level = LEAST(current_level+1,5) WHERE user_id=$1', [req.user.id]);
-      } else if (avg < 50) {
-        await query('UPDATE students SET current_level = GREATEST(current_level-1,1) WHERE user_id=$1', [req.user.id]);
-      }
-    }
-
     res.json({ correct, score });
   } catch (err) { next(err); }
 });
 
-// Complete session
+// POST /sessions/:sessionId/complete — Legacy session complete
 router.post('/sessions/:sessionId/complete', requireAuth, async (req, res, next) => {
   try {
     const { duration_minutes } = req.body;
@@ -86,34 +206,11 @@ router.post('/sessions/:sessionId/complete', requireAuth, async (req, res, next)
        WHERE id=$2 AND user_id=$3`,
       [duration_minutes || 0, req.params.sessionId, req.user.id]
     );
-    // Update streak
-    await query(
-      `UPDATE students SET streak_count = streak_count + 1,
-         last_activity_at = NOW()
-       WHERE user_id=$1 AND
-         (last_activity_at IS NULL OR last_activity_at < CURRENT_DATE)`,
-      [req.user.id]
-    );
     res.json({ ok: true });
   } catch (err) { next(err); }
 });
 
-// Practice history
-router.get('/history', requireAuth, async (req, res, next) => {
-  try {
-    const { rows } = await query(
-      `SELECT ps.*, COUNT(pse.id)::int AS exercises_done, ROUND(AVG(pse.score),0) AS avg_score
-       FROM practice_sessions ps
-       LEFT JOIN practice_session_exercises pse ON pse.session_id = ps.id
-       WHERE ps.user_id=$1
-       GROUP BY ps.id ORDER BY ps.created_at DESC LIMIT 20`,
-      [req.user.id]
-    );
-    res.json(rows);
-  } catch (err) { next(err); }
-});
-
-// Error summary
+// GET /errors — Error summary
 router.get('/errors', requireAuth, async (req, res, next) => {
   try {
     const { rows } = await query(
@@ -126,7 +223,7 @@ router.get('/errors', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Sync offline sessions
+// POST /sessions/sync — Offline sync
 router.post('/sessions/sync', requireAuth, async (req, res, next) => {
   try {
     const { sessions } = req.body;

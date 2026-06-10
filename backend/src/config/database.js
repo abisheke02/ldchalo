@@ -1,6 +1,21 @@
 const { Pool } = require('pg');
 const env      = require('./env');
 
+// ─── Demo mode: no-op database that returns empty results ──────────
+if (env.demoMode) {
+  const noopQuery = async () => ({ rows: [], rowCount: 0 });
+  module.exports = {
+    pool:      null,
+    query:     noopQuery,
+    getClient: async () => ({
+      query:   noopQuery,
+      release: () => {},
+    }),
+  };
+  return;
+}
+
+// ─── Real database pool ────────────────────────────────────────────
 const pool = new Pool(
   env.db.url
     ? { connectionString: env.db.url, ssl: env.nodeEnv === 'production' ? { rejectUnauthorized: false } : false }
@@ -11,6 +26,6 @@ pool.on('error', (err) => console.error('[DB] Unexpected pool error:', err.messa
 
 module.exports = {
   pool,
-  query:    (...args) => pool.query(...args),
-  getClient: ()      => pool.connect(),
+  query:     (...args) => pool.query(...args),
+  getClient: ()        => pool.connect(),
 };

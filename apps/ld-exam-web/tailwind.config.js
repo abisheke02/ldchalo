@@ -1,6 +1,13 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  safelist: [
+    'md:w-[42%]',
+    'md:w-[25%]',
+    'grid-cols-2',
+    'md:grid-cols-4',
+    'md:flex-row',
+  ],
   theme: {
     extend: {
       fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },

@@ -21,6 +21,11 @@ import PracticeScreen   from '../screens/ld/PracticeScreen';
 import TestsScreen      from '../screens/ld/TestsScreen';
 import MessagesScreen   from '../screens/ld/MessagesScreen';
 
+// Screening
+import ScreeningQuizScreen   from '../screens/screening/ScreeningQuizScreen';
+import ScreeningResultScreen from '../screens/screening/ScreeningResultScreen';
+import PracticeSessionScreen from '../screens/ld/PracticeSessionScreen';
+
 const Stack = createNativeStackNavigator();
 const Tab   = createBottomTabNavigator();
 
@@ -85,7 +90,10 @@ export default function AppNavigator() {
         {!token ? (
           <Stack.Screen name="Login" component={LoginScreen} />
         ) : isSchool ? (
+          <Stack.Screen name="ScreeningQuiz"   component={ScreeningQuizScreen} />
+          <Stack.Screen name="ScreeningResult" component={ScreeningResultScreen} />
           <Stack.Screen name="SchoolApp" component={SchoolTabs} />
+          <Stack.Screen name="PracticeSession" component={PracticeSessionScreen} />
         ) : (isStudent || isParent) ? (
           <Stack.Screen name="StudentApp" component={StudentTabs} />
         ) : (

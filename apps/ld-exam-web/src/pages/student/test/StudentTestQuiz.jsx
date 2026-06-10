@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { trackTestStarted, trackTestCompleted, trackTestAbandoned } from '../../../services/analytics';
 
@@ -8,52 +8,52 @@ const TOTAL_TIME = 25 * 60; // 25 minutes in seconds
 
 const pad = (n) => String(n).padStart(2, '0');
 
-const SpeakBtn = ({ text, token }) => {
-  const [ttsState, setTtsState] = useState('idle'); // idle | loading | playing
-  const audioRef = useRef(null);
+const SpeakBtn = ({ text }) => {
+  const [ttsState, setTtsState] = useState('idle'); // idle | playing
 
-  const speak = async () => {
+  const speak = () => {
     if (ttsState !== 'idle') {
-      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+      window.speechSynthesis.cancel();
       setTtsState('idle');
       return;
     }
-    setTtsState('loading');
-    try {
-      const resp = await fetch('/api/ld/tts/speak', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ text }),
-      });
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error || 'TTS failed');
-      const audio = new Audio(`data:audio/mp3;base64,${data.audioBase64}`);
-      audioRef.current = audio;
-      audio.onended = () => setTtsState('idle');
-      audio.onerror = () => setTtsState('idle');
-      setTtsState('playing');
-      audio.play();
-    } catch {
-      toast.error('Could not play audio');
-      setTtsState('idle');
+
+    if (!window.speechSynthesis) {
+      toast.error('Text-to-speech not supported in this browser');
+      return;
     }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-IN';
+    utterance.rate = 0.85;
+    utterance.pitch = 1.0;
+
+    // Try to pick an Indian English voice if available
+    const voices = window.speechSynthesis.getVoices();
+    const indianVoice = voices.find(v => v.lang === 'en-IN') || voices.find(v => v.lang.startsWith('en'));
+    if (indianVoice) utterance.voice = indianVoice;
+
+    utterance.onend = () => setTtsState('idle');
+    utterance.onerror = () => {
+      toast.error('Could not play speech');
+      setTtsState('idle');
+    };
+
+    setTtsState('playing');
+    window.speechSynthesis.speak(utterance);
   };
 
   return (
     <button
       onClick={speak}
       title={ttsState === 'playing' ? 'Stop audio' : 'Hear question'}
-      className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition
+      className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all
         ${ttsState === 'playing'
           ? 'bg-blue-600 text-white border-blue-600 animate-pulse'
-          : ttsState === 'loading'
-          ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-wait'
           : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300'}`}
     >
-      {ttsState === 'loading' ? (
-        <span className="w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
-      ) : ttsState === 'playing' ? 'â¹' : 'ðŸ”Š'}
-      {ttsState === 'playing' ? 'Stop' : ttsState === 'loading' ? 'Loadingâ€¦' : 'Hear'}
+      {ttsState === 'playing' ? '⏹' : '🔊'}
+      {ttsState === 'playing' ? 'Stop' : 'Hear'}
     </button>
   );
 };
@@ -322,7 +322,7 @@ const StudentTestQuiz = ({ level, onResult, onBack }) => {
           Question {current + 1}
         </p>
         <p className="text-lg font-bold text-slate-800 leading-relaxed mb-3">{q.question_text}</p>
-        <SpeakBtn text={q.question_text} token={token} />
+        <SpeakBtn text={q.question_text} />
       </div>
 
       {/* Options or Speaking input */}

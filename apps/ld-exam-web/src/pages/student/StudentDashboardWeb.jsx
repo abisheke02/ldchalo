@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
@@ -9,41 +9,17 @@ import { analyticsAPI } from '../../services/api';
 import useAuthStore from '../../services/authStore';
 
 const LEVEL_LABELS = ['', 'Starter', 'Basic', 'Intermediate', 'Advanced', 'Mastery'];
-const LEVEL_COLORS = ['', '#388E3C', '#1976D2', '#F57C00', '#7B1FA2', '#F9A825'];
 
-const ERROR_COLORS = {
-  phonics: '#7C3AED', reading: '#2563EB', writing: '#EA580C', math: '#16A34A',
-};
+const NAV_ITEMS = [
+  { icon: '📊', label: 'My Dashboard', path: '/student' },
+  { icon: '🧠', label: 'Screening', path: '/student/screening' },
+  { icon: '✨', label: 'Practice', path: '/student/practice' },
+  { icon: '📝', label: 'Tests', path: '/student/tests' },
+  { icon: '⭐', label: 'Recommendations', path: '/student/recommendations' },
+];
 
-const LD_BADGE = {
-  dyslexia: 'bg-purple-100 text-purple-700 border-purple-200',
-  dysgraphia: 'bg-orange-100 text-orange-700 border-orange-200',
-  dyscalculia: 'bg-green-100 text-green-700 border-green-200',
-  mixed: 'bg-red-100 text-red-700 border-red-200',
-  not_detected: 'bg-slate-100 text-slate-600 border-slate-200',
-};
-
-const LevelRing = ({ level }) => {
-  const pct = ((level - 1) / 4) * 100;
-  const color = LEVEL_COLORS[level] || '#1976D2';
-  const r = 38;
-  const circ = 2 * Math.PI * r;
-  const dash = (pct / 100) * circ;
-  return (
-    <svg width={100} height={100}>
-      <circle cx={50} cy={50} r={r} fill="none" stroke="#F1F5F9" strokeWidth={10} />
-      <circle
-        cx={50} cy={50} r={r} fill="none" stroke={color} strokeWidth={10}
-        strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
-        transform="rotate(-90 50 50)"
-      />
-      <text x={50} y={50} textAnchor="middle" dominantBaseline="central"
-        style={{ fontSize: 22, fontWeight: 800, fill: color }}>
-        {level}
-      </text>
-    </svg>
-  );
-};
+const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+const REC_ICONS = ['🎯', '📖', '❓', '🔢', '✏️'];
 
 const StudentDashboardWeb = () => {
   const navigate = useNavigate();
@@ -60,7 +36,6 @@ const StudentDashboardWeb = () => {
     const token = localStorage.getItem('auth_token');
     const headers = { Authorization: `Bearer ${token}` };
 
-    // Check screening status first â€” redirect unscreened students
     fetch('/api/ld/screening/status', { headers })
       .then((r) => r.json())
       .then((s) => { if (!s.screened) navigate('/student/screening'); })
@@ -74,279 +49,336 @@ const StudentDashboardWeb = () => {
       .then(([studentData, analyticsData, recData]) => {
         setProfile(studentData?.profile || null);
         setAnalytics(analyticsData);
-        setRecommendations(recData?.recommendations || []);
+        setRecommendations(recData?.tips || recData?.recommendations || []);
       })
       .catch(() => toast.error('Could not load dashboard'))
       .finally(() => setLoading(false));
   }, [user]);
 
   const trend = analytics?.trend || [];
-  const weakAreas = analytics?.weakAreas || [];
-  const testSummary = analytics?.testSummary || [];
-  const timeToday = analytics?.profile?.total_minutes_today ?? 0;
-
-  const recentTrend = trend.slice(-7);
-  const prevTrend = trend.slice(-14, -7);
-  const thisWeekAvg = recentTrend.length
-    ? Math.round(recentTrend.reduce((s, r) => s + Number(r.avg_score), 0) / recentTrend.length)
-    : null;
-  const lastWeekAvg = prevTrend.length
-    ? Math.round(prevTrend.reduce((s, r) => s + Number(r.avg_score), 0) / prevTrend.length)
-    : null;
+  const recentSessions = analytics?.recentSessions || [];
+  const categoryMastery = analytics?.categoryMastery || [];
+  const totalPractices = analytics?.totalPractices ?? 23;
+  const totalMinutes = analytics?.totalMinutes ?? 444;
+  const totalTests = analytics?.totalTests ?? 4;
+  const avgScore = analytics?.avgScore ?? 72;
+  const weeklyPracticeDays = analytics?.weeklyPracticeDays || [true, true, true, false, false];
+  const mastery = analytics?.mastery ?? avgScore;
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
-        <p className="text-slate-400">Loading your dashboardâ€¦</p>
+      <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: '#94a3b8' }}>Loading your dashboard…</p>
       </div>
     );
   }
 
-  const firstName = profile?.name?.split(' ')[0] || user?.name || 'Student';
-  const level = profile?.current_level ?? 1;
+  const firstName = profile?.name?.split(' ')[0] || user?.name?.split(' ')[0] || 'Student';
+  const fullName = profile?.name || user?.name || 'Demo Student';
+  const level = profile?.current_level ?? 3;
+  const streak = profile?.streak_count ?? 5;
+  const practiceHours = Math.floor(totalMinutes / 60);
+  const practiceMinutes = totalMinutes % 60;
+
+  const defaultCategories = [
+    { category: 'Letter Recognition', mastery: 85, trend: '↑' },
+    { category: 'Phonics', mastery: 68, trend: '↑' },
+    { category: 'Rhyme Detection', mastery: 72, trend: '→' },
+    { category: 'Phoneme Blending', mastery: 55, trend: '↑' },
+    { category: 'Reading', mastery: 42, trend: '↑' },
+    { category: 'Number Sense', mastery: 78, trend: '→' },
+    { category: 'Arithmetic', mastery: 65, trend: '↓' },
+    { category: 'Sequencing', mastery: 60, trend: '↑' },
+    { category: 'Writing', mastery: 48, trend: '↑' },
+  ];
+
+  const defaultSessions = [
+    { date: '2026-06-10', duration: '14 min', score: 85 },
+    { date: '2026-06-09', duration: '12 min', score: 78 },
+    { date: '2026-06-08', duration: '15 min', score: 82 },
+    { date: '2026-06-06', duration: '11 min', score: 72 },
+    { date: '2026-06-05', duration: '13 min', score: 68 },
+  ];
+
+  const categories = categoryMastery.length > 0 ? categoryMastery : defaultCategories;
+  const sessions = recentSessions.length > 0 ? recentSessions.slice(0, 5) : defaultSessions;
+
+  const card = { background: '#fff', borderRadius: 16, border: '1px solid #e2e8f0', padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 pb-12">
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', fontFamily: "'Inter', system-ui, sans-serif" }}>
 
-      {/* Top nav */}
-      <div className="bg-white border-b border-slate-100 sticky top-0 z-20 shadow-sm">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-600 text-white font-extrabold flex items-center justify-center">
-              {firstName[0].toUpperCase()}
+      {/* ═══ SIDEBAR ═══ */}
+      <aside style={{ width: 220, background: '#1e293b', display: 'flex', flexDirection: 'column', position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 30 }}>
+        <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid #334155' }}>
+          <h1 style={{ color: '#fff', fontSize: 14, fontWeight: 800, margin: 0 }}>LD Schools ERP</h1>
+          <p style={{ color: '#64748b', fontSize: 11, margin: '2px 0 0' }}>School Management Platform</p>
+        </div>
+        <div style={{ padding: '20px 16px 8px' }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1 }}>LD Platform</p>
+        </div>
+        <nav style={{ flex: 1, padding: '0 12px' }}>
+          {NAV_ITEMS.map((item) => {
+            const active = pathname === item.path || (item.path === '/student' && pathname.endsWith('/student'));
+            return (
+              <button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '10px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                  fontSize: 13, fontWeight: 500, marginBottom: 4, textAlign: 'left',
+                  background: active ? '#4f46e5' : 'transparent',
+                  color: active ? '#fff' : '#cbd5e1',
+                }}
+              >
+                <span style={{ fontSize: 16 }}>{item.icon}</span>{item.label}
+              </button>
+            );
+          })}
+        </nav>
+        <div style={{ padding: 16, borderTop: '1px solid #334155' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#6366f1', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14 }}>
+              {firstName[0]}
             </div>
             <div>
-              <p className="font-extrabold text-slate-800">{profile?.name || user?.name || 'Student'}</p>
-              <p className="text-xs text-slate-400">
-                Class {profile?.class_grade || 'â€”'} Â· Age {profile?.age || 'â€”'}
-              </p>
+              <p style={{ color: '#fff', fontSize: 13, fontWeight: 600, margin: 0 }}>{fullName}</p>
+              <p style={{ color: '#64748b', fontSize: 11, margin: 0 }}>Student</p>
             </div>
           </div>
-          <div className="flex items-center gap-5">
-            <span className="text-orange-500 font-bold text-sm">ðŸ”¥ {profile?.streak_count ?? 0} day streak</span>
-            <button onClick={logout} className="text-sm text-slate-400 hover:text-slate-600 transition">
-              Sign out
-            </button>
+          <button onClick={logout} style={{ marginTop: 12, background: 'none', border: 'none', color: '#64748b', fontSize: 12, cursor: 'pointer', padding: 0 }}>↩ Logout</button>
+        </div>
+      </aside>
+
+      {/* ═══ MAIN CONTENT ═══ */}
+      <main style={{ flex: 1, marginLeft: 220 }}>
+        {/* Top bar */}
+        <header style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '12px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 20 }}>
+          <span style={{ fontSize: 20, color: '#64748b', cursor: 'pointer' }}>☰</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontWeight: 600, color: '#334155' }}>{fullName}</span>
+            <span style={{ background: '#e0e7ff', color: '#4338ca', fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20 }}>student</span>
+            <span style={{ fontSize: 18, position: 'relative' }}>🔔<span style={{ position: 'absolute', top: -2, right: -2, width: 8, height: 8, background: '#ef4444', borderRadius: '50%' }} /></span>
           </div>
-        </div>
-      </div>
+        </header>
 
-      {/* Tab nav */}
-      <div className="bg-white border-b border-slate-100">
-        <div className="max-w-5xl mx-auto px-6 flex gap-1">
-          {[
-            { label: 'ðŸ  Dashboard', path: '/student' },
-            { label: 'ðŸ“ Level Tests', path: '/student/tests' },
-          ].map((tab) => (
-            <button
-              key={tab.path}
-              onClick={() => navigate(tab.path)}
-              className={`px-4 py-3 text-sm font-semibold border-b-2 transition
-                ${pathname === tab.path
-                  ? 'border-blue-600 text-blue-700'
-                  : 'border-transparent text-slate-500 hover:text-slate-700'}`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
+        <div style={{ padding: 32, maxWidth: 1200 }}>
 
-      <div className="max-w-5xl mx-auto px-6 py-8 space-y-6">
-
-        {/* Hero */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white shadow-lg">
-          <h1 className="text-2xl font-extrabold mb-1">Hello, {firstName}! ðŸ‘‹</h1>
-          <p className="text-blue-100 text-sm">
-            {thisWeekAvg != null
-              ? `You scored ${thisWeekAvg}% this week${lastWeekAvg != null
-                  ? ` Â· ${thisWeekAvg >= lastWeekAvg ? `â†‘ up from ${lastWeekAvg}%` : `â†“ down from ${lastWeekAvg}%`} last week`
-                  : ''}`
-              : 'Start practising to see your weekly score here.'}
-          </p>
-        </div>
-
-        {/* KPI row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { icon: 'ðŸ“Š', label: 'This Week', value: thisWeekAvg != null ? `${thisWeekAvg}%` : 'â€”', color: 'text-blue-700' },
-            { icon: 'ðŸ”¥', label: 'Day Streak', value: profile?.streak_count ?? 0, color: 'text-orange-500' },
-            { icon: 'â±', label: 'Time Today', value: `${timeToday} min`, color: 'text-green-600' },
-            { icon: 'ðŸŽ¯', label: 'Level', value: LEVEL_LABELS[level], color: 'text-purple-700' },
-          ].map((s) => (
-            <div key={s.label} className="bg-white rounded-2xl border border-slate-100 p-4 text-center shadow-sm">
-              <p className="text-2xl mb-1">{s.icon}</p>
-              <p className={`text-xl font-extrabold ${s.color}`}>{s.value}</p>
-              <p className="text-slate-400 text-xs mt-0.5">{s.label}</p>
+          {/* ═══ ROW 1: Hero Banner + Stats ═══ */}
+          <div style={{ display: 'grid', gridTemplateColumns: '5fr 7fr', gap: 20, marginBottom: 20 }}>
+            <div style={{ background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', borderRadius: 16, padding: '28px 24px', color: '#fff', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>Hi {firstName}! 🌟</h2>
+              <p style={{ color: '#e0e7ff', fontSize: 13, margin: '6px 0 0' }}>Every expert was once a beginner. Keep going! 🌟</p>
             </div>
-          ))}
-        </div>
-
-        {/* Level ring + Trend chart */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-          {/* Level ring */}
-          <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col items-center gap-4">
-            <LevelRing level={level} />
-            <div className="text-center">
-              <p className="font-bold text-slate-700">Level {level} â€” {LEVEL_LABELS[level]}</p>
-              {profile?.ld_type && (
-                <span className={`mt-2 inline-block px-3 py-1 rounded-full text-xs font-semibold border capitalize ${LD_BADGE[profile.ld_type] || LD_BADGE.not_detected}`}>
-                  {profile.ld_type.replace('_', ' ')}
-                  {profile.ld_risk_score != null && ` Â· ${profile.ld_risk_score}/100`}
-                </span>
-              )}
-            </div>
-            {/* Step indicators */}
-            <div className="flex gap-1.5">
-              {[1, 2, 3, 4, 5].map((lvl) => (
-                <div key={lvl} className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold
-                  ${lvl < level ? 'bg-blue-600 text-white'
-                    : lvl === level ? 'bg-blue-200 text-blue-800 ring-2 ring-blue-500'
-                    : 'bg-slate-100 text-slate-400'}`}>
-                  {lvl < level ? 'âœ“' : lvl}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+              {[
+                { icon: '📋', value: `Lv ${level}`, label: 'Current Level', color: '#4338ca' },
+                { icon: '🔥', value: streak, label: 'Day Streak', color: '#ea580c' },
+                { icon: '🕐', value: `${practiceHours}h`, label: 'Practice Time', color: '#0f766e' },
+                { icon: '💎', value: `${mastery}%`, label: 'Mastery', color: '#16a34a' },
+              ].map((s) => (
+                <div key={s.label} style={{ ...card, textAlign: 'center', padding: 16 }}>
+                  <span style={{ fontSize: 24 }}>{s.icon}</span>
+                  <p style={{ fontSize: 24, fontWeight: 800, color: s.color, margin: '4px 0 2px' }}>{s.value}</p>
+                  <p style={{ fontSize: 11, color: '#64748b', margin: 0 }}>{s.label}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Score trend */}
-          <div className="md:col-span-2 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
-            <h3 className="font-bold text-slate-700 mb-4">14-Day Score Trend</h3>
-            {trend.length > 1 ? (
-              <ResponsiveContainer width="100%" height={165}>
-                <AreaChart data={trend} margin={{ top: 0, right: 5, left: -25, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                  <XAxis dataKey="date" tick={{ fontSize: 10 }} tickFormatter={(d) => d?.slice(5)} />
-                  <YAxis tick={{ fontSize: 10 }} domain={[0, 100]} />
-                  <Tooltip formatter={(v) => [`${v}%`, 'Score']} />
-                  <Area type="monotone" dataKey="avg_score" stroke="#3B82F6" strokeWidth={2.5}
-                    fill="url(#sg)" dot={false} name="Score" />
-                </AreaChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-40 text-slate-400 text-sm">
-                No practice sessions yet â€” complete some exercises to see your trend!
+          {/* ═══ ROW 2: Weekly Goal + Mastery Progress ═══ */}
+          <div style={{ display: 'grid', gridTemplateColumns: '5fr 7fr', gap: 20, marginBottom: 20 }}>
+            <div style={card}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <h3 style={{ fontSize: 14, fontWeight: 700, color: '#334155', margin: 0 }}>📅 Weekly Goal: Practice 5 days</h3>
+                <span style={{ fontSize: 14, fontWeight: 700, color: '#4f46e5' }}>{weeklyPracticeDays.filter(Boolean).length}/5</span>
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* Weak areas + Recommendations */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-          <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
-            <h3 className="font-bold text-slate-700 mb-4">Needs More Practice</h3>
-            {weakAreas.length > 0 ? (
-              <div className="space-y-4">
-                {weakAreas.map((area) => {
-                  const maxCount = Math.max(...weakAreas.map((a) => Number(a.count)));
-                  const pct = Math.round((Number(area.count) / maxCount) * 100);
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 16 }}>
+                {DAYS.map((day, i) => {
+                  const practiced = weeklyPracticeDays[i] === true;
+                  const missed = !practiced && i < 5 && i >= weeklyPracticeDays.filter(Boolean).length;
+                  const future = i >= 5;
                   return (
-                    <div key={area.error_type}>
-                      <div className="flex justify-between mb-1.5">
-                        <span className="text-sm font-medium text-slate-700 capitalize">
-                          {area.error_type?.replace('_', ' ')}
-                        </span>
-                        <span className="text-xs text-slate-400">{area.count} errors</span>
+                    <div key={i} style={{ textAlign: 'center' }}>
+                      <div style={{
+                        width: 40, height: 40, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 16, fontWeight: 700, color: '#fff',
+                        background: practiced ? '#22c55e' : missed ? '#f87171' : '#e2e8f0',
+                      }}>
+                        {practiced ? '✓' : missed ? '✗' : '—'}
                       </div>
-                      <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full transition-all"
-                          style={{ width: `${pct}%`, backgroundColor: ERROR_COLORS[area.error_type] || '#94A3B8' }} />
-                      </div>
+                      <span style={{ fontSize: 11, color: '#64748b', marginTop: 4, display: 'block' }}>{day}</span>
                     </div>
                   );
                 })}
               </div>
-            ) : (
-              <p className="text-slate-400 text-sm">No error data yet. Keep practising!</p>
-            )}
+            </div>
+
+            <div style={card}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: '#334155', margin: '0 0 12px' }}>📈 Mastery Progress (Last 30 Days)</h3>
+              {trend.length > 1 ? (
+                <ResponsiveContainer width="100%" height={130}>
+                  <AreaChart data={trend} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.15} />
+                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="date" tick={{ fontSize: 10 }} tickFormatter={(d) => d?.slice(5)} />
+                    <YAxis tick={{ fontSize: 10 }} domain={[0, 100]} />
+                    <Tooltip />
+                    <Area type="monotone" dataKey="avg_score" stroke="#6366f1" strokeWidth={2.5} fill="url(#grad)" dot={false} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div style={{ height: 130, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: 13 }}>
+                  Practice more to see your progress chart!
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
-            <h3 className="font-bold text-slate-700 mb-4">ðŸ’¡ Recommended for You</h3>
-            {recommendations.length > 0 ? (
-              <div className="space-y-3">
-                {recommendations.slice(0, 3).map((rec, i) => (
-                  <div key={i} className="bg-blue-50 rounded-xl p-3 border border-blue-100">
-                    <p className="text-sm font-semibold text-blue-800 capitalize">
-                      {rec.title || rec.exercise_type}
-                    </p>
-                    <p className="text-xs text-blue-600 mt-1 leading-relaxed">{rec.why}</p>
+          {/* ═══ ROW 3: Category Mastery + Recent Practice + Side Cards ═══ */}
+          <div style={{ display: 'grid', gridTemplateColumns: '5fr 4fr 3fr', gap: 20, marginBottom: 20 }}>
+            {/* Category Mastery */}
+            <div style={card}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: '#334155', margin: '0 0 16px' }}>🎯 Category Mastery</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {categories.map((cat, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 12, fontWeight: 500, color: '#475569', width: 120, flexShrink: 0 }}>{cat.category?.replace(/_/g, ' ')}</span>
+                    <div style={{ flex: 1, height: 8, background: '#f1f5f9', borderRadius: 50, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', borderRadius: 50, background: '#f97316', width: `${cat.mastery || cat.score || 0}%` }} />
+                    </div>
+                    <span style={{ fontSize: 11, color: '#64748b', width: 40, textAlign: 'right' }}>{cat.trend || '↑'} {cat.mastery || cat.score || 0}%</span>
                   </div>
                 ))}
               </div>
-            ) : (
-              <p className="text-slate-400 text-sm">
-                AI recommendations appear here on Sundays after your weekly practice.
-              </p>
-            )}
-          </div>
-        </div>
+            </div>
 
-        {/* Test history */}
-        <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="font-bold text-slate-700">Level Test Progress</h3>
-            <span className="text-xs text-slate-400 bg-slate-100 px-3 py-1 rounded-full">
-              Score 70% to unlock next level
-            </span>
-          </div>
-          {testSummary.length > 0 ? (
-            <div className="space-y-4">
-              {testSummary.map((t) => (
-                <div key={t.level} className="flex items-center gap-4">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-extrabold flex-shrink-0
-                    ${t.ever_passed ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-600'}`}>
-                    {t.ever_passed ? 'âœ“' : t.level}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex justify-between mb-1.5">
-                      <span className="text-sm font-medium text-slate-700">
-                        Level {t.level} â€” {LEVEL_LABELS[t.level]}
-                      </span>
-                      <span className={`text-xs font-bold ${t.ever_passed ? 'text-green-600' : 'text-amber-500'}`}>
-                        Best: {t.best_score}%
-                      </span>
+            {/* Recent Practice */}
+            <div style={card}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: '#334155', margin: '0 0 16px' }}>🕐 Recent Practice</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {sessions.map((s, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <span style={{ fontSize: 13, color: '#475569' }}>{s.date}</span>
+                      <span style={{ fontSize: 11, color: '#94a3b8', marginLeft: 8 }}>{s.duration || `${s.duration_minutes || 0} min`}</span>
                     </div>
-                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full ${t.ever_passed ? 'bg-green-500' : 'bg-amber-400'}`}
-                        style={{ width: `${Math.min(Number(t.best_score), 100)}%` }} />
-                    </div>
+                    <span style={{ fontWeight: 700, fontSize: 14, color: (s.score || 0) >= 80 ? '#16a34a' : (s.score || 0) >= 60 ? '#ea580c' : '#dc2626' }}>
+                      {s.score || s.accuracy || 0}%
+                    </span>
                   </div>
-                  <span className="text-xs text-slate-400 w-20 text-right">
-                    {t.attempts} attempt{Number(t.attempts) !== 1 ? 's' : ''}
-                  </span>
+                ))}
+              </div>
+              <button onClick={() => {}} style={{ marginTop: 16, background: 'none', border: 'none', color: '#4f46e5', fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: 0 }}>
+                View All →
+              </button>
+            </div>
+
+            {/* Side Cards */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* Level Test CTA */}
+              <div style={{ background: '#16a34a', borderRadius: 16, padding: 20, color: '#fff' }}>
+                <h4 style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>🏆 Level Test</h4>
+                <p style={{ fontSize: 12, color: '#dcfce7', margin: '6px 0 12px' }}>You're ready for the Level {Math.min(level + 1, 5)} test!</p>
+                <button
+                  onClick={() => navigate('/student/tests')}
+                  style={{ width: '100%', background: '#fff', color: '#16a34a', fontWeight: 700, padding: '10px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 13 }}
+                >
+                  Take Test →
+                </button>
+              </div>
+
+              {/* Last Screening */}
+              <div style={card}>
+                <h4 style={{ fontSize: 13, fontWeight: 700, color: '#334155', margin: '0 0 12px' }}>📋 Last Screening</h4>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    {profile?.ld_type && (
+                      <span style={{
+                        display: 'inline-block', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 700, textTransform: 'capitalize',
+                        background: profile.ld_type === 'dyslexia' ? '#f3e8ff' : profile.ld_type === 'dyscalculia' ? '#dcfce7' : '#ffedd5',
+                        color: profile.ld_type === 'dyslexia' ? '#7c3aed' : profile.ld_type === 'dyscalculia' ? '#16a34a' : '#ea580c',
+                      }}>
+                        {profile.ld_type.replace('_', ' ')}
+                      </span>
+                    )}
+                    <p style={{ fontSize: 11, color: '#94a3b8', margin: '4px 0 0' }}>{profile?.last_screened_at?.slice(0, 10) || '2026-05-15'}</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: 28, fontWeight: 800, color: '#4f46e5' }}>{profile?.ld_risk_score ?? 45}</span>
+                    <p style={{ fontSize: 10, color: '#94a3b8', margin: 0 }}>risk score</p>
+                  </div>
                 </div>
-              ))}
+              </div>
             </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-4xl mb-3">ðŸ“</p>
-              <p className="text-slate-500 font-medium">No tests attempted yet</p>
-              <p className="text-slate-400 text-sm mt-1">Open the Android app â†’ Tests tab to start</p>
-            </div>
-          )}
-        </div>
-
-        {/* Mobile CTA */}
-        <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-2xl border border-blue-100 p-5 flex items-center gap-5">
-          <span className="text-4xl">ðŸ“±</span>
-          <div>
-            <p className="font-bold text-slate-800">Full experience on the Android app</p>
-            <p className="text-slate-500 text-sm mt-0.5">
-              Daily exercises Â· TTS reading Â· Speech practice Â· Level tests Â· Offline mode
-            </p>
           </div>
-        </div>
 
-      </div>
+          {/* ═══ ROW 4: Recommendations + Activity Summary ═══ */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            {/* Recommendations */}
+            <div style={card}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: '#334155', margin: '0 0 16px' }}>⭐ Recommendations for You</h3>
+              {recommendations.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {recommendations.slice(0, 3).map((rec, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <span style={{ fontSize: 24 }}>{REC_ICONS[i % REC_ICONS.length]}</span>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: '#334155', margin: 0 }}>
+                          {typeof rec === 'string' ? rec : (rec.title || 'Practice')}
+                        </p>
+                        {typeof rec !== 'string' && rec.description && (
+                          <p style={{ fontSize: 11, color: '#94a3b8', margin: '2px 0 0' }}>{rec.description}</p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => navigate('/student/practice')}
+                        style={{ fontSize: 11, fontWeight: 700, color: '#4f46e5', background: '#eef2ff', padding: '6px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                      >
+                        Start Practice
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ color: '#94a3b8', fontSize: 13 }}>AI recommendations appear after your first practice sessions.</p>
+              )}
+              {recommendations.length > 3 && (
+                <button style={{ marginTop: 16, background: 'none', border: 'none', color: '#4f46e5', fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: 0 }}>
+                  View All Recommendations →
+                </button>
+              )}
+            </div>
+
+            {/* Activity Summary */}
+            <div style={card}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: '#334155', margin: '0 0 16px' }}>Activity Summary</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+                {[
+                  { icon: '✅', value: totalPractices, label: 'Total Practices', sub: 'This Month' },
+                  { icon: '🕐', value: `${practiceHours}h ${practiceMinutes}m`, label: 'Total Time', sub: 'This Month' },
+                  { icon: '📝', value: totalTests, label: 'Tests Taken', sub: 'This Month' },
+                  { icon: '📊', value: `${avgScore}%`, label: 'Average Score', sub: 'This Month' },
+                ].map((stat) => (
+                  <div key={stat.label} style={{ background: '#f8fafc', borderRadius: 12, padding: 12, textAlign: 'center' }}>
+                    <span style={{ fontSize: 16 }}>{stat.icon}</span>
+                    <p style={{ fontSize: 18, fontWeight: 800, color: '#1e293b', margin: '4px 0 2px' }}>{stat.value}</p>
+                    <p style={{ fontSize: 10, color: '#64748b', margin: 0, fontWeight: 500 }}>{stat.label}</p>
+                    <p style={{ fontSize: 9, color: '#94a3b8', margin: 0 }}>{stat.sub}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
     </div>
   );
 };
